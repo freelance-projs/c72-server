@@ -1,0 +1,20 @@
+mode: dev # debug, dev, prod, testing
+
+gracefulShutdown:
+  timeout: 5s
+
+http:
+  server:
+    addr: 0.0.0.0:8080
+    cfg: readHeaderTimeout=5s&readTimeout=20s&writeTimeout=25s&idleTimeout=20s&maxHeaderBytes=10000
+  cors:
+    allowOrigins: "*"
+
+mysql:
+  tag_scan:
+    dsn: root:secret@tcp(localhost:3306)/tag_scan?charset=utf8mb4&loc=Local&parseTime=True
+    cfg: maxOpenConns=100&maxIdleConns=100&connMaxLifetime=5m&connMaxIdleTime=1m
+
+logger:
+  format: text # text, json
+  writer: stdout # stdout, file
