@@ -15,3 +15,8 @@ migrate-force:
 dev:
 	go run ./cmd
 
+build:
+	docker build --tag ngoctd/c72-server .   
+
+push:
+	docker push docker.io/ngoctd/c72-server:latest

@@ -2,8 +2,6 @@ package tag
 
 import (
 	"context"
-	"fmt"
-	"log/slog"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -23,11 +21,9 @@ type scanTagInBatches struct {
 
 func ScanInBatches(tagRepo tagRepositoryScan) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		slog.Info("/api/tags")
 		uc := &scanTagInBatches{
 			tagRepo: tagRepo,
 		}
-		fmt.Println("Hello")
 
 		req, bindErr := uc.bind(c)
 		if bindErr != nil {
@@ -56,6 +52,7 @@ func (uc *scanTagInBatches) usecase(ctx context.Context, req *dto.ScanTagRequest
 	for _, v := range req.TagIDs {
 		mTags = append(mTags, model.Tag{
 			ID:        v,
+			IsScanned: true,
 			CreatedAt: now,
 		})
 	}

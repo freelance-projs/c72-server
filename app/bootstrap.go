@@ -9,7 +9,9 @@ import (
 	"net/http"
 
 	"github.com/ngoctd314/c72-api-server/app/route"
+	"github.com/ngoctd314/c72-api-server/pkg/helper"
 	"github.com/ngoctd314/c72-api-server/pkg/repository"
+	"github.com/ngoctd314/common/env"
 	"github.com/ngoctd314/common/net/conn"
 	"github.com/ngoctd314/common/net/ghttp"
 	"gorm.io/gorm"
@@ -23,6 +25,12 @@ type app struct {
 func New(ctx context.Context) *app {
 	initLogger()
 
+	// auto migrate up
+	if err := migrateUp(); err != nil {
+		dsn := env.GetString("mysql.tag_scan.dsn")
+		slog.Error("error occur when migrate up", "err", err, "dsn", dsn)
+	}
+
 	dbConn := mustInitDBConn()
 	tagRepo := repository.NewTag(dbConn)
 
@@ -35,6 +43,8 @@ func New(ctx context.Context) *app {
 }
 
 func (i *app) Start(ctx context.Context) {
+	localIP, _ := helper.LocalIP()
+	slog.Info("Server is starting", "local_ip", localIP)
 	if err := i.httpServer.ListenAndServe(); err != nil {
 		if errors.Is(err, http.ErrServerClosed) {
 			slog.Info("ErrServerClosed")

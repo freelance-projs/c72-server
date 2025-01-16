@@ -11,7 +11,7 @@ import (
 )
 
 type tagRepositoryUpdateTagname interface {
-	UpdateTagName(ctx context.Context, mTags []model.Tag) error
+	UpdateTagNameByID(ctx context.Context, mTags []model.Tag) error
 }
 
 type updateTagName struct {
@@ -45,32 +45,32 @@ func UpdateTagName(tagRepo tagRepositoryUpdateTagname) gin.HandlerFunc {
 	}
 }
 
-func (uc *updateTagName) usecase(ctx context.Context, req *dto.UpdateTagNameRequest) (*dto.Response, error) {
-	mTags := make([]model.Tag, 0, len(req.TagNames))
-	for _, v := range req.TagNames {
+func (uc *updateTagName) usecase(ctx context.Context, req []dto.UpdateTagNameRequest) (*dto.Response, error) {
+	mTags := make([]model.Tag, 0, len(req))
+	for _, v := range req {
 		mTags = append(mTags, model.Tag{
-			ID:   v.TagID,
+			ID:   v.ID,
 			Name: sql.NullString{String: v.Name, Valid: true},
 		})
 	}
-	if err := uc.tagRepo.UpdateTagName(ctx, mTags); err != nil {
+	if err := uc.tagRepo.UpdateTagNameByID(ctx, mTags); err != nil {
 		return nil, err
 	}
 
 	return dto.StatusOK(nil), nil
 }
 
-func (uc *updateTagName) bind(c *gin.Context) (*dto.UpdateTagNameRequest, error) {
-	req := &dto.UpdateTagNameRequest{}
-	if err := c.ShouldBindJSON(req); err != nil {
+func (uc *updateTagName) bind(c *gin.Context) ([]dto.UpdateTagNameRequest, error) {
+	req := []dto.UpdateTagNameRequest{}
+	if err := c.ShouldBindJSON(&req); err != nil {
 		return nil, err
 	}
 
 	return req, nil
 }
 
-func (uc *updateTagName) validate(req *dto.UpdateTagNameRequest) error {
-	if err := gvalidator.ValidateStruct(req); err != nil {
+func (uc *updateTagName) validate(req []dto.UpdateTagNameRequest) error {
+	if err := gvalidator.ValidateArray(req); err != nil {
 		return err
 	}
 

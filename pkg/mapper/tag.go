@@ -13,6 +13,7 @@ func ToTagDTO(m *model.Tag) dto.Tag {
 	return dto.Tag{
 		ID:        m.ID,
 		Name:      m.Name.String,
+		IsScanned: m.IsScanned,
 		CreatedAt: m.CreatedAt,
 		UpdatedAt: m.UpdatedAt,
 	}

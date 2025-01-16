@@ -16,6 +16,7 @@ import (
 )
 
 func Handler(tagRepo *repository.Tag) *gin.Engine {
+	gin.DisableBindValidation()
 	mux := gin.New()
 
 	// register no route
@@ -26,7 +27,7 @@ func Handler(tagRepo *repository.Tag) *gin.Engine {
 	)
 	mux.Use(cors.New(cors.Config{
 		AllowOrigins:     env.GetStringSlice("http.cors.allowOrigins"),
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "POST"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "POST", "DELETE"},
 		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
@@ -36,19 +37,17 @@ func Handler(tagRepo *repository.Tag) *gin.Engine {
 	apiGroup := mux.Group("/api")
 
 	apiGroup.POST("/tags", tag.ScanInBatches(tagRepo))
+	apiGroup.POST("/tags-mapping/upload", tag.TagMappingUpload(tagRepo))
 	apiGroup.GET("/tags/:id", tag.GetByID(tagRepo))
+	apiGroup.GET("/tags", tag.List(tagRepo))
 	apiGroup.GET("/tags/scan-histories", tag.NewTagScanHistory(tagRepo))
 	apiGroup.PATCH("/tags", tag.UpdateTagName(tagRepo))
+	apiGroup.DELETE("/tags/:id", tag.DeleteByID(tagRepo))
+	apiGroup.PATCH("/tags/by-name", tag.UpdateTagNameByName(tagRepo))
+	apiGroup.DELETE("/tags/by-name/:name", tag.DeleteByName(tagRepo))
 
 	apiGroup.GET("/ips", func(c *gin.Context) {
-		ip, err := helper.LocalIP()
-		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.Response{
-				Success: false,
-				Message: err.Error(),
-			})
-			return
-		}
+		ip := helper.GetHostIP()
 		c.JSON(http.StatusOK, dto.Response{
 			Success: true,
 			Data:    ip,

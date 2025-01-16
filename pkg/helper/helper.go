@@ -43,3 +43,11 @@ func LocalIP() (string, error) {
 
 	return "", fmt.Errorf("no active network interfaces found")
 }
+
+func GetHostIP() []string {
+	ip, err := net.LookupHost("host.docker.internal")
+	if err != nil || len(ip) == 0 {
+		return nil
+	}
+	return ip
+}

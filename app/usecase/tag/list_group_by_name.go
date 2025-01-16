@@ -13,15 +13,16 @@ import (
 type tagRepositoryScanHistory interface {
 	GetTagsScanHistories(ctx context.Context, from, to *time.Time) ([]model.TagScanHistory, error)
 	GetTagsByIDs(ctx context.Context, ids []string) ([]model.Tag, error)
+	GetTags(ctx context.Context, from, to *time.Time) ([]model.Tag, error)
 }
 
-type tagScanHistory struct {
+type listGroupByName struct {
 	tagRepo tagRepositoryScanHistory
 }
 
 func NewTagScanHistory(tagRepo tagRepositoryScanHistory) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		uc := &tagScanHistory{
+		uc := &listGroupByName{
 			tagRepo: tagRepo,
 		}
 
@@ -46,25 +47,8 @@ func NewTagScanHistory(tagRepo tagRepositoryScanHistory) gin.HandlerFunc {
 	}
 }
 
-func (uc *tagScanHistory) usecase(ctx context.Context, req *dto.TagScanHistoryRequest) (*dto.Response, error) {
-	mScanHistories, err := uc.tagRepo.GetTagsScanHistories(ctx, req.From, req.To)
-	if err != nil {
-		return nil, err
-	}
-	if len(mScanHistories) == 0 {
-		return dto.StatusOK(nil), nil
-	}
-
-	uniqueTagIDs := make(map[string]struct{})
-	tagIDs := make([]string, 0, len(mScanHistories))
-	for _, v := range mScanHistories {
-		if _, ok := uniqueTagIDs[v.TagID]; !ok {
-			tagIDs = append(tagIDs, v.TagID)
-		}
-		uniqueTagIDs[v.TagID] = struct{}{}
-	}
-
-	mTags, err := uc.tagRepo.GetTagsByIDs(ctx, tagIDs)
+func (uc *listGroupByName) usecase(ctx context.Context, req *dto.TagScanHistoryRequest) (*dto.Response, error) {
+	mTags, err := uc.tagRepo.GetTags(ctx, req.From, req.To)
 	if err != nil {
 		return nil, err
 	}
@@ -72,12 +56,39 @@ func (uc *tagScanHistory) usecase(ctx context.Context, req *dto.TagScanHistoryRe
 		return dto.StatusOK(nil), nil
 	}
 
-	resp := uc.buildResponse(mScanHistories, mTags)
+	resp := uc.buildResponse(mTags)
 
 	return dto.StatusOK(resp), nil
 }
 
-func (uc *tagScanHistory) buildResponse(mScanHistories []model.TagScanHistory, mTags []model.Tag) []dto.TagScanHistoryResponse {
+func (uc *listGroupByName) buildResponse(mTags []model.Tag) []dto.TagScanHistoryResponseV2 {
+	mTagIDToTag := make(map[string]model.Tag)
+	for _, v := range mTags {
+		mTagIDToTag[v.ID] = v
+	}
+
+	uniq := make(map[string]int)
+	var result []dto.TagScanHistoryResponseV2
+	for _, v := range mTags {
+		tagName := v.Name.String
+		if tagName == "" {
+			tagName = v.ID
+		}
+		if resultIdx, ok := uniq[tagName]; !ok {
+			uniq[tagName] = len(result)
+			result = append(result, dto.TagScanHistoryResponseV2{
+				Name:  tagName,
+				Count: 1,
+			})
+		} else {
+			result[resultIdx].Count++
+		}
+	}
+
+	return result
+}
+
+func (uc *listGroupByName) buildResponseGroupByDay(mScanHistories []model.TagScanHistory, mTags []model.Tag) []dto.TagScanHistoryResponse {
 	mTagIDToTag := make(map[string]model.Tag)
 	for _, v := range mTags {
 		mTagIDToTag[v.ID] = v
@@ -119,7 +130,7 @@ func (uc *tagScanHistory) buildResponse(mScanHistories []model.TagScanHistory, m
 	return append(resp, currentHistory)
 }
 
-func (uc *tagScanHistory) bind(c *gin.Context) (*dto.TagScanHistoryRequest, error) {
+func (uc *listGroupByName) bind(c *gin.Context) (*dto.TagScanHistoryRequest, error) {
 	var req dto.TagScanHistoryRequest
 
 	if err := c.ShouldBind(&req); err != nil {
@@ -142,7 +153,7 @@ func (uc *tagScanHistory) bind(c *gin.Context) (*dto.TagScanHistoryRequest, erro
 	return &req, nil
 }
 
-func (uc *tagScanHistory) validate(req *dto.TagScanHistoryRequest) error {
+func (uc *listGroupByName) validate(req *dto.TagScanHistoryRequest) error {
 	if err := gvalidator.ValidateStruct(req); err != nil {
 		return err
 	}
