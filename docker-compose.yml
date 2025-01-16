@@ -3,7 +3,7 @@ services:
     image: ngoctd/c72-server:latest
     restart: always
     environment:
-      - HOST_IP=host.docker.internal
+      - HOST_IP=192.168.1.5
     ports:
       - "8080:8080"
     depends_on:
@@ -26,6 +26,7 @@ services:
       MYSQL_DATABASE: tag_scan
     volumes:
       - tag_scan_data:/var/lib/mysql
+      # - C:\docker-volumes\mysql:/var/lib/mysql
 
 volumes:
   tag_scan_data:

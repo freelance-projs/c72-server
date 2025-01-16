@@ -12,8 +12,8 @@ http:
 
 mysql:
   tag_scan:
-    # dsn: root:secret@tcp(host.docker.internal:3306)/tag_scan?charset=utf8mb4&loc=Local&parseTime=True&tls=skip-verify
-    dsn: root:secret@tcp(localhost:3306)/tag_scan?charset=utf8mb4&loc=Local&parseTime=True&tls=skip-verify
+    dsn: root:secret@tcp(host.docker.internal:3306)/tag_scan?charset=utf8mb4&loc=Local&parseTime=True&tls=skip-verify
+    # dsn: root:secret@tcp(localhost:3306)/tag_scan?charset=utf8mb4&loc=Local&parseTime=True&tls=skip-verify
     cfg: maxOpenConns=100&maxIdleConns=100&connMaxLifetime=5m&connMaxIdleTime=1m
 
 logger:

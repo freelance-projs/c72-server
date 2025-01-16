@@ -11,10 +11,6 @@ import (
 )
 
 func main() {
-	if err := migrateUp(); err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println("success")
 }
 
 func migrateUp() error {
