@@ -4,8 +4,6 @@ WORKDIR /app
 
 COPY . .
 
-ENV GOPROXY=direct
-
 RUN go mod download
 
 RUN CGO_ENABLED=0 go build -o main ./cmd
