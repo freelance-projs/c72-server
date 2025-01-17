@@ -33,7 +33,7 @@ type GetTagByIDRequest struct {
 
 type ListTagsRequest struct {
 	Name      *string    `form:"name" validate:"omitnil,required"`
-	IsScanned *bool      `form:"is_scanned", validate:"omitnil,required"`
+	IsScanned *bool      `form:"is_scanned" validate:"omitnil,required"`
 	From      *time.Time `form:"from" validate:"omitnil,required"`
 	To        *time.Time `form:"to" validate:"omitnil,required"`
 }
@@ -49,12 +49,12 @@ type ScanHistoryUnit struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-type TagScanHistoryResponse struct {
+type TagScanHistoryResponseV1 struct {
 	Day       string            `json:"day"`
 	Histories []ScanHistoryUnit `json:"histories"`
 }
 
-type TagScanHistoryResponseV2 struct {
+type GroupTagByNameResponse struct {
 	Name  string `form:"name" json:"name"`
 	Count int    `form:"count" json:"count"`
 }

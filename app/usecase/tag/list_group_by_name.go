@@ -61,14 +61,14 @@ func (uc *listGroupByName) usecase(ctx context.Context, req *dto.TagScanHistoryR
 	return dto.StatusOK(resp), nil
 }
 
-func (uc *listGroupByName) buildResponse(mTags []model.Tag) []dto.TagScanHistoryResponseV2 {
+func (uc *listGroupByName) buildResponse(mTags []model.Tag) []dto.GroupTagByNameResponse {
 	mTagIDToTag := make(map[string]model.Tag)
 	for _, v := range mTags {
 		mTagIDToTag[v.ID] = v
 	}
 
 	uniq := make(map[string]int)
-	var result []dto.TagScanHistoryResponseV2
+	var result []dto.GroupTagByNameResponse
 	for _, v := range mTags {
 		tagName := v.Name.String
 		if tagName == "" {
@@ -76,7 +76,7 @@ func (uc *listGroupByName) buildResponse(mTags []model.Tag) []dto.TagScanHistory
 		}
 		if resultIdx, ok := uniq[tagName]; !ok {
 			uniq[tagName] = len(result)
-			result = append(result, dto.TagScanHistoryResponseV2{
+			result = append(result, dto.GroupTagByNameResponse{
 				Name:  tagName,
 				Count: 1,
 			})
@@ -88,18 +88,18 @@ func (uc *listGroupByName) buildResponse(mTags []model.Tag) []dto.TagScanHistory
 	return result
 }
 
-func (uc *listGroupByName) buildResponseGroupByDay(mScanHistories []model.TagScanHistory, mTags []model.Tag) []dto.TagScanHistoryResponse {
+func (uc *listGroupByName) buildResponseGroupByDay(mScanHistories []model.TagScanHistory, mTags []model.Tag) []dto.TagScanHistoryResponseV1 {
 	mTagIDToTag := make(map[string]model.Tag)
 	for _, v := range mTags {
 		mTagIDToTag[v.ID] = v
 	}
 
 	// result
-	var resp []dto.TagScanHistoryResponse
+	var resp []dto.TagScanHistoryResponseV1
 	tracking := make(map[[2]string]int)
 
 	currentDay := mScanHistories[0].CreatedAt
-	currentHistory := dto.TagScanHistoryResponse{
+	currentHistory := dto.TagScanHistoryResponseV1{
 		Day: currentDay.Format("2006-01-02"),
 	}
 	// map tag to day and scan time
@@ -107,7 +107,7 @@ func (uc *listGroupByName) buildResponseGroupByDay(mScanHistories []model.TagSca
 		if v.CreatedAt.Day() != currentDay.Day() {
 			currentDay = v.CreatedAt
 			resp = append(resp, currentHistory)
-			currentHistory = dto.TagScanHistoryResponse{
+			currentHistory = dto.TagScanHistoryResponseV1{
 				Day: currentDay.Format("2006-01-02"),
 			}
 		}
