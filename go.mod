@@ -8,7 +8,7 @@ require (
 	github.com/go-pdf/fpdf v0.9.0
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/golang-migrate/migrate/v4 v4.18.2
-	github.com/ngoctd314/common v0.0.0-20250120071351-73a78575bc1d
+	github.com/ngoctd314/common v0.0.0-20250331174706-2a1d229f6a5f
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
 	github.com/xuri/excelize/v2 v2.9.0
@@ -74,5 +74,3 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/ngoctd314/common => ../../../common
