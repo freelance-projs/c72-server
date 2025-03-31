@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ngoctd314/c72-api-server/pkg/dto"
@@ -24,7 +23,6 @@ type tagMappingUpload struct {
 
 func TagMappingUpload(tagRepo tagRepositoryForUpload) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		fmt.Println("Upload")
 		uc := &tagMappingUpload{
 			tagRepo: tagRepo,
 		}
@@ -62,13 +60,10 @@ func (t *tagMappingUpload) usecase(ctx context.Context, req *dto.TagMappingUploa
 	}
 
 	mTags := make([]model.Tag, 0, len(idToName))
-	now := time.Now()
 	for id, name := range idToName {
 		mTags = append(mTags, model.Tag{
-			ID:        id,
-			Name:      sql.NullString{String: name, Valid: true},
-			IsScanned: false,
-			CreatedAt: now,
+			ID:   id,
+			Name: sql.NullString{String: name, Valid: name != ""},
 		})
 	}
 	if err := t.tagRepo.CreateTagInBatches(ctx, mTags); err != nil {

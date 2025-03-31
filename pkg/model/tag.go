@@ -2,17 +2,23 @@ package model
 
 import (
 	"database/sql"
-	"time"
 )
 
 type Tag struct {
-	ID        string         `gorm:"column:id;primaryKey"`
-	Name      sql.NullString `gorm:"column:name"`
-	IsScanned bool           `gorm:"column:is_scanned"`
-	CreatedAt time.Time      `gorm:"column:created_at"`
-	UpdatedAt time.Time      `gorm:"column:updated_at"`
+	ID          string         `gorm:"column:id;primaryKey"`
+	Name        sql.NullString `gorm:"column:name"`
+	LastUsed    sql.NullTime   `gorm:"column:last_used"`
+	LastWashing sql.NullTime   `gorm:"column:last_washing"`
 }
 
 func (Tag) TableName() string {
-	return "tags"
+	return "tag"
+}
+
+type TagName struct {
+	Name string `gorm:"column:name"`
+}
+
+func (TagName) TableName() string {
+	return "tag_name"
 }

@@ -11,13 +11,12 @@ import (
 )
 
 var (
-	configFile = flag.String("config", "config.yaml", "Path to configuration file.")
+	cnf = flag.String("config", "config.yaml", "Path to configuration file.")
 )
 
 func main() {
 	flag.Parse()
-
-	env.Init(env.WithFile(*configFile))
+	env.Init(env.WithFile(*cnf))
 
 	ctx := context.Background()
 	app := app.New(ctx)

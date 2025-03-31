@@ -11,7 +11,7 @@ import (
 	"github.com/ngoctd314/c72-api-server/app/route"
 	"github.com/ngoctd314/c72-api-server/pkg/helper"
 	"github.com/ngoctd314/c72-api-server/pkg/repository"
-	"github.com/ngoctd314/common/env"
+	"github.com/ngoctd314/c72-api-server/pkg/service"
 	"github.com/ngoctd314/common/net/conn"
 	"github.com/ngoctd314/common/net/ghttp"
 	"gorm.io/gorm"
@@ -25,16 +25,11 @@ type app struct {
 func New(ctx context.Context) *app {
 	initLogger()
 
-	// auto migrate up
-	if err := migrateUp(); err != nil {
-		dsn := env.GetString("mysql.tag_scan.dsn")
-		slog.Error("error occur when migrate up", "err", err, "dsn", dsn)
-	}
-
 	dbConn := mustInitDBConn()
-	tagRepo := repository.NewTag(dbConn)
+	repo := repository.NewLaundry(dbConn)
+	service.InitSystemSetting(repo)
 
-	handler := route.Handler(tagRepo)
+	handler := route.Handler(repo)
 
 	return &app{
 		httpServer: mustInitServer(ctx, handler),
@@ -87,7 +82,7 @@ func mustInitServer(ctx context.Context, usecase http.Handler) *ghttp.Server {
 }
 
 func mustInitDBConn() *gorm.DB {
-	sqlConn, err := conn.SQL(conn.MySQLDriver, "tag_scan")
+	sqlConn, err := conn.SQL(conn.MySQLDriver, "laundry")
 	if err != nil {
 		panic(err)
 	}

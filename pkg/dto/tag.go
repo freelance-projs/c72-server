@@ -8,17 +8,21 @@ import (
 type Tag struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name,omitempty"`
-	IsScanned bool      `json:"is_scanned"`
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+}
+
+type AssignTagRequest struct {
+	IDs  []string `json:"ids"`
+	Name string   `json:"name"`
 }
 
 type ScanTagRequest struct {
 	TagIDs []string `json:"tag_ids" validate:"required,dive"`
 }
 
-type UpdateTagNameRequest struct {
-	ID   string `json:"id" validate:"required"`
+type UpdateTagRequest struct {
+	ID   string `json:"id" uri:"id" validate:"required"`
 	Name string `json:"name" validate:"required"`
 }
 
@@ -31,11 +35,20 @@ type GetTagByIDRequest struct {
 	ID string `uri:"id" validate:"required"`
 }
 
+type ListTagByIDRequest struct {
+	IDs  []string `json:"ids" form:"ids" validate:"required,dive"`
+	Type string   `json:"type" form:"type"`
+}
+
+type ListTagByIDResponse struct {
+	Tags            []Tag `json:"tags"`
+	DeactivatedTags []Tag `json:"deactivated_tags"`
+}
+
 type ListTagsRequest struct {
-	Name      *string    `form:"name" validate:"omitnil,required"`
-	IsScanned *bool      `form:"is_scanned" validate:"omitnil,required"`
-	From      *time.Time `form:"from" validate:"omitnil,required"`
-	To        *time.Time `form:"to" validate:"omitnil,required"`
+	Name *string    `form:"name" validate:"omitnil,required"`
+	From *time.Time `form:"from" validate:"omitnil,required"`
+	To   *time.Time `form:"to" validate:"omitnil,required"`
 }
 
 type TagScanHistoryRequest struct {
@@ -60,7 +73,7 @@ type GroupTagByNameResponse struct {
 }
 
 type DeleteTagByIDRequest struct {
-	ID string `uri:"id" validate:"required"`
+	ID string `json:"id" uri:"id" validate:"required"`
 }
 
 type DeleteTagByNameRequest struct {

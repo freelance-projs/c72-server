@@ -2,7 +2,6 @@ package tag
 
 import (
 	"context"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ngoctd314/c72-api-server/pkg/dto"
@@ -48,12 +47,9 @@ func ScanInBatches(tagRepo tagRepositoryScan) gin.HandlerFunc {
 
 func (uc *scanTagInBatches) usecase(ctx context.Context, req *dto.ScanTagRequest) (*dto.Response, error) {
 	mTags := make([]model.Tag, 0, len(req.TagIDs))
-	now := time.Now()
 	for _, v := range req.TagIDs {
 		mTags = append(mTags, model.Tag{
-			ID:        v,
-			IsScanned: true,
-			CreatedAt: now,
+			ID: v,
 		})
 	}
 
@@ -63,7 +59,7 @@ func (uc *scanTagInBatches) usecase(ctx context.Context, req *dto.ScanTagRequest
 
 	tagDTOs := make([]dto.Tag, 0, len(mTags))
 	for _, v := range mTags {
-		tagDTOs = append(tagDTOs, mapper.ToTagDTO(&v))
+		tagDTOs = append(tagDTOs, mapper.ToTagDto(&v))
 	}
 
 	return dto.StatusCreated(tagDTOs, "tag scan history"), nil

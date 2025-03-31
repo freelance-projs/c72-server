@@ -1,63 +1,68 @@
 package route
 
 import (
-	"log/slog"
 	"net/http"
-	"os"
-	"time"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/ngoctd314/c72-api-server/app/middleware"
+	"github.com/ngoctd314/c72-api-server/app/usecase"
+	"github.com/ngoctd314/c72-api-server/app/usecase/department"
+	"github.com/ngoctd314/c72-api-server/app/usecase/laundry"
+	"github.com/ngoctd314/c72-api-server/app/usecase/lending"
+	"github.com/ngoctd314/c72-api-server/app/usecase/setting"
 	"github.com/ngoctd314/c72-api-server/app/usecase/tag"
+	"github.com/ngoctd314/c72-api-server/app/usecase/tagname"
 	"github.com/ngoctd314/c72-api-server/pkg/dto"
 	"github.com/ngoctd314/c72-api-server/pkg/repository"
-	"github.com/ngoctd314/common/env"
+	"github.com/ngoctd314/common/net/ghttp"
 )
 
-func Handler(tagRepo *repository.Tag) *gin.Engine {
+func Handler(repo *repository.Laundry) *gin.Engine {
 	gin.DisableBindValidation()
 	mux := gin.New()
 
-	// register no route
 	mux.NoRoute(noRouteHandleFunc)
-	// register global middlewares
-	mux.Use(
-		gin.Recovery(),
-	)
-	mux.Use(cors.New(cors.Config{
-		AllowOrigins:     env.GetStringSlice("http.cors.allowOrigins"),
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "POST", "DELETE"},
-		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}))
+	mux.Use(gin.Recovery())
 
-	apiGroup := mux.Group("/api")
+	mux.Use(middleware.Cors())
 
-	apiGroup.POST("/tags", tag.ScanInBatches(tagRepo))
-	apiGroup.POST("/tags-mapping/upload", tag.TagMappingUpload(tagRepo))
-	apiGroup.GET("/tags/:id", tag.GetByID(tagRepo))
-	apiGroup.GET("/tags", tag.List(tagRepo))
-	apiGroup.GET("/tags/scan-histories", tag.NewTagScanHistory(tagRepo))
-	apiGroup.PATCH("/tags", tag.UpdateTagName(tagRepo))
-	apiGroup.DELETE("/tags/:id", tag.DeleteByID(tagRepo))
-	apiGroup.PATCH("/tags/by-name", tag.UpdateTagNameByName(tagRepo))
-	apiGroup.DELETE("/tags/by-name/:name", tag.DeleteByName(tagRepo))
+	api := mux.Group("/api/v1")
 
-	apiGroup.GET("/host-ips", func(c *gin.Context) {
-		c.JSON(http.StatusOK, dto.Response{
-			Success: true,
-			Data:    os.Getenv("HOST_IP"),
-		})
-	})
-	apiGroup.GET("/ping", func(c *gin.Context) {
-		slog.Info("/ping")
-		c.JSON(http.StatusOK, dto.Response{
-			Success: true,
-			Data:    "pong",
-		})
-	})
+	api.POST("/tags", ghttp.GinHandleFunc(tag.AssignTag(repo)))
+	api.GET("/tags", ghttp.GinHandleFunc(tag.List(repo)))
+	api.GET("/tags/ids", ghttp.GinHandleFunc(tag.ListTagByID(repo)))
+	api.PATCH("/tags/:id", ghttp.GinHandleFunc(tag.UpdateTagName(repo)))
+	api.DELETE("/tags/:id", ghttp.GinHandleFunc(tag.DeleteByID(repo)))
+	api.PATCH("/tags/by-name", ghttp.GinHandleFunc(tag.UpdateTagNameByName(repo)))
+
+	api.POST("/departments", ghttp.GinHandleFunc(department.Create(repo)))
+	api.POST("/departments/upload", ghttp.GinHandleFunc(department.CreateByUpload(repo)))
+	api.GET("/departments", ghttp.GinHandleFunc(department.List(repo)))
+	api.DELETE("/departments", ghttp.GinHandleFunc(department.DeleteBatch(repo)))
+	api.PATCH("/departments/by-name", ghttp.GinHandleFunc(department.Change(repo)))
+
+	api.POST("/lending", ghttp.GinHandleFunc(lending.DoLending(repo)))
+	api.GET("/lending/:id/tags", ghttp.GinHandleFunc(lending.GetTags(repo)))
+	api.GET("/lending", ghttp.GinHandleFunc(lending.List(repo)))
+	api.PATCH("/lending/return-dirty", ghttp.GinHandleFunc(lending.ReturnDirty(repo)))
+
+	api.POST("/laundry", ghttp.GinHandleFunc(laundry.DoLaundry(repo)))
+	api.GET("/laundry/:id", ghttp.GinHandleFunc(laundry.Get(repo)))
+	api.GET("/washing/:id/tags", ghttp.GinHandleFunc(laundry.GetTags(repo)))
+	api.GET("/laundry", ghttp.GinHandleFunc(laundry.List(repo)))
+	api.PATCH("/laundry/return-clean", ghttp.GinHandleFunc(laundry.ReturnClean(repo)))
+
+	api.POST("/tag-names/upload", ghttp.GinHandleFunc(tagname.CreateByUpload(repo)))
+	api.DELETE("/tag-names", ghttp.GinHandleFunc(tagname.DeleteBatch(repo)))
+	api.GET("/tag-names", ghttp.GinHandleFunc(tagname.List(repo)))
+	api.PATCH("/tag-names", ghttp.GinHandleFunc(tagname.Change(repo)))
+
+	api.POST("/settings", ghttp.GinHandleFunc(setting.Create(repo)))
+	api.GET("/settings", ghttp.GinHandleFunc(setting.List(repo)))
+	api.PATCH("/settings", ghttp.GinHandleFunc(setting.Update(repo)))
+	api.DELETE("/settings", ghttp.GinHandleFunc(setting.Delete(repo)))
+
+	api.GET("/ping", ghttp.GinHandleFunc(usecase.Ping()))
 
 	return mux
 }
