@@ -15,6 +15,9 @@ build:
 push:
 	docker push docker.io/ngoctd/c72-server:latest
 
+run:
+	docker run -dp 5080:5080 ngoctd/c72-server
+
 testfunc:
 	go test -v -count=1 -run ${func} ${gomodule}/${pkg}
 
