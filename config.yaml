@@ -5,15 +5,15 @@ gracefulShutdown:
 
 http:
   server:
-    addr: 0.0.0.0:8080
+    addr: 0.0.0.0:5080
     cfg: readHeaderTimeout=5s&readTimeout=20s&writeTimeout=25s&idleTimeout=20s&maxHeaderBytes=10000
   cors:
     allowOrigins: "*"
 
 mysql:
   laundry:
-    # dsn: root:secret@tcp(host.docker.internal:3306)/tag_scan?charset=utf8mb4&loc=Local&parseTime=True&tls=skip-verify
-    dsn: root:secret@tcp(localhost:3306)/laundry?charset=utf8mb4&loc=Local&parseTime=True&tls=skip-verify
+    dsn: root:secret@tcp(host.docker.internal:3306)/laundry?charset=utf8mb4&loc=Local&parseTime=True&tls=skip-verify
+    # dsn: root:secret@tcp(localhost:3306)/laundry?charset=utf8mb4&loc=Local&parseTime=True&tls=skip-verify
     cfg: maxOpenConns=100&maxIdleConns=100&connMaxLifetime=5m&connMaxIdleTime=1m
 
 logger:

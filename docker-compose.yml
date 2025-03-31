@@ -2,17 +2,15 @@ services:
   api-server:
     image: ngoctd/c72-server:latest
     restart: always
-    environment:
-      - HOST_IP=192.168.1.5
     ports:
-      - "8080:8080"
+      - "5080:5080"
     depends_on:
       - mysql
 
   fe:
     image: ngoctd/c72-fe:latest
     ports:
-      - "3000:3000"
+      - "5081:5081"
     depends_on:
       - api-server
 
@@ -23,10 +21,10 @@ services:
       - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: secret
-      MYSQL_DATABASE: tag_scan
+      MYSQL_DATABASE: laundry
     volumes:
-      - tag_scan_data:/var/lib/mysql
+      - tag:/var/lib/mysql
       # - C:\docker-volumes\mysql:/var/lib/mysql
 
 volumes:
-  tag_scan_data:
+  tag:
