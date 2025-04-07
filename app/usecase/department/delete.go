@@ -33,8 +33,8 @@ func (uc *deleteBatch) Usecase(ctx context.Context, req *dto.DeleteDepartmentReq
 }
 
 // TODO: check why default delete Bind is not working
-func (t *deleteBatch) Bind(c *gin.Context) (*dto.DeleteTagNameRequest, error) {
-	var req dto.DeleteTagNameRequest
+func (t *deleteBatch) Bind(c *gin.Context) (*dto.DeleteDepartmentRequest, error) {
+	var req dto.DeleteDepartmentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return nil, err
 	}
