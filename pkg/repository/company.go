@@ -58,7 +58,7 @@ func (r *Laundry) ListCompanies(ctx context.Context, filter qb.Builder) ([]model
 func (r *Laundry) UpdateCompanyName(ctx context.Context, oldName, newName string) error {
 	tx := r.db.WithContext(ctx)
 
-	if err := tx.Exec("UPDATE department SET name = ? WHERE name = ?",
+	if err := tx.Exec("UPDATE company SET name = ? WHERE name = ?",
 		newName, oldName).Error; err != nil {
 		return err
 	}
