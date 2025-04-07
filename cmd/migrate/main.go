@@ -122,6 +122,7 @@ func migrateInstance(dsn string) *migrate.Migrate {
 	if err != nil {
 		log.Fatalf("parse dsn error: %v", err)
 	}
+	fmt.Println("dsn: ", dsn)
 
 	db, err := sql.Open("mysql", fmt.Sprintf("%s&multiStatements=true", dsn))
 	if err != nil {

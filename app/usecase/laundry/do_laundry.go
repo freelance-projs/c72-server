@@ -50,7 +50,7 @@ func (uc *doLaundry) Usecase(ctx context.Context, req *dto.DoLaundryRequest) (*g
 		return m.ID
 	})
 	mLaundry := &model.Laundry{
-		Name:       req.Name,
+		Name:       req.Company,
 		NumWashing: len(tagIDs),
 	}
 

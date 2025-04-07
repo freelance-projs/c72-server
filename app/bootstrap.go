@@ -11,7 +11,6 @@ import (
 	"github.com/ngoctd314/c72-api-server/app/route"
 	"github.com/ngoctd314/c72-api-server/pkg/helper"
 	"github.com/ngoctd314/c72-api-server/pkg/repository"
-	"github.com/ngoctd314/c72-api-server/pkg/service"
 	"github.com/ngoctd314/common/net/conn"
 	"github.com/ngoctd314/common/net/ghttp"
 	"gorm.io/gorm"
@@ -27,7 +26,7 @@ func New(ctx context.Context) *app {
 
 	dbConn := mustInitDBConn()
 	repo := repository.NewLaundry(dbConn)
-	service.InitSystemSetting(repo)
+	// service.InitSystemSetting(repo)
 
 	handler := route.Handler(repo)
 

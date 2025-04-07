@@ -12,8 +12,8 @@ type Laundry struct {
 }
 
 type DoLaundryRequest struct {
-	Name   string   `json:"name" validate:"required"`
-	TagIDs []string `json:"tag_ids" validate:"required,dive"`
+	Company string   `json:"company" validate:"required"`
+	TagIDs  []string `json:"tag_ids" validate:"required,dive"`
 }
 
 type GetLaundryRequest struct {

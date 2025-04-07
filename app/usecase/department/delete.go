@@ -23,7 +23,7 @@ func DeleteBatch(repo deleteBatchTagNameRepo) *deleteBatch {
 	}
 }
 
-func (uc *deleteBatch) Usecase(ctx context.Context, req *dto.DeleteTagNameRequest) (*ghttp.ResponseBody, error) {
+func (uc *deleteBatch) Usecase(ctx context.Context, req *dto.DeleteDepartmentRequest) (*ghttp.ResponseBody, error) {
 	if err := uc.repo.DeleteDepartments(ctx, req.Names); err != nil {
 		slog.Error("error deleting department", "err", err)
 		return nil, err

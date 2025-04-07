@@ -6,10 +6,8 @@ import (
 )
 
 type Tag struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name,omitempty"`
-	CreatedAt time.Time `json:"created_at,omitempty"`
-	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	ID   string `json:"id"`
+	Name string `json:"name,omitempty"`
 }
 
 type AssignTagRequest struct {
@@ -35,9 +33,9 @@ type GetTagByIDRequest struct {
 	ID string `uri:"id" validate:"required"`
 }
 
-type ListTagByIDRequest struct {
-	IDs  []string `json:"ids" form:"ids" validate:"required,dive"`
-	Type string   `json:"type" form:"type"`
+type GetActiveTagsRequest struct {
+	IDs    []string `json:"ids" form:"ids" validate:"required,dive"`
+	Action string   `json:"action" form:"action" validate:"required,oneof=lending lending_return washing washing_return"`
 }
 
 type ListTagByIDResponse struct {

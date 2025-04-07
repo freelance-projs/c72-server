@@ -2,6 +2,7 @@ gomodule:=github.com/ngoctd314/c72-api-server
 
 dev:
 	go run ./cmd/api
+	# docker run -p 5080:5080 ngoctd/c72-server
 
 migrate:
 	go run ./cmd/migrate $(filter-out $@,$(MAKECMDGOALS))
