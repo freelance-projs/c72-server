@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 
 	"github.com/ngoctd314/c72-api-server/pkg/model"
@@ -12,7 +13,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func (t *Laundry) UpdateTagNameByName(ctx context.Context, oldName, newName string) error {
+func (t *Repository) UpdateTagNameByName(ctx context.Context, oldName, newName string) error {
 	tx := t.db.WithContext(ctx)
 
 	return tx.Transaction(func(tx *gorm.DB) error {
@@ -24,7 +25,7 @@ func (t *Laundry) UpdateTagNameByName(ctx context.Context, oldName, newName stri
 	})
 }
 
-func (t *Laundry) GetTagByID(ctx context.Context, id string) (*model.Tag, error) {
+func (t *Repository) GetTagByID(ctx context.Context, id string) (*model.Tag, error) {
 	tx := t.db.WithContext(ctx)
 
 	var mTag model.Tag
@@ -38,7 +39,7 @@ func (t *Laundry) GetTagByID(ctx context.Context, id string) (*model.Tag, error)
 	return &mTag, nil
 }
 
-func (t *Laundry) GetTagsByIDs(ctx context.Context, ids []string) ([]model.Tag, error) {
+func (t *Repository) GetTagsByIDs(ctx context.Context, ids []string) ([]model.Tag, error) {
 	tx := t.db.WithContext(ctx)
 
 	var mTags []model.Tag
@@ -49,7 +50,7 @@ func (t *Laundry) GetTagsByIDs(ctx context.Context, ids []string) ([]model.Tag, 
 	return mTags, nil
 }
 
-func (t *Laundry) GetTagsByLendingID(ctx context.Context, lendingID int) ([]model.LendingTag, error) {
+func (t *Repository) GetTagsByLendingID(ctx context.Context, lendingID int) ([]model.LendingTag, error) {
 	tx := t.db.WithContext(ctx)
 
 	var mLendingTags []model.LendingTag
@@ -62,7 +63,7 @@ func (t *Laundry) GetTagsByLendingID(ctx context.Context, lendingID int) ([]mode
 	return mLendingTags, nil
 }
 
-func (t *Laundry) GetTagsByWashingID(ctx context.Context, lendingID int) ([]model.LaundryTag, error) {
+func (t *Repository) GetTagsByWashingID(ctx context.Context, lendingID int) ([]model.LaundryTag, error) {
 	tx := t.db.WithContext(ctx)
 
 	var mWashingTags []model.LaundryTag
@@ -75,7 +76,7 @@ func (t *Laundry) GetTagsByWashingID(ctx context.Context, lendingID int) ([]mode
 	return mWashingTags, nil
 }
 
-func (t *Laundry) UpdateTagNameByID(ctx context.Context, mTag *model.Tag) error {
+func (t *Repository) UpdateTagNameByID(ctx context.Context, mTag *model.Tag) error {
 	tx := t.db.WithContext(ctx)
 
 	if err := tx.Updates(mTag).Error; err != nil {
@@ -85,7 +86,7 @@ func (t *Laundry) UpdateTagNameByID(ctx context.Context, mTag *model.Tag) error 
 	return nil
 }
 
-func (t *Laundry) DeleteTagByID(ctx context.Context, id string) error {
+func (t *Repository) DeleteTagByID(ctx context.Context, id string) error {
 	tx := t.db.WithContext(ctx)
 
 	if err := tx.Exec("DELETE FROM tag WHERE id = ?", id).Error; err != nil {
@@ -95,32 +96,35 @@ func (t *Laundry) DeleteTagByID(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *Laundry) CreateTagInBatches(ctx context.Context, mTags []model.Tag) error {
+func (r *Repository) CreateTagInBatches(ctx context.Context, tagIDs []string, name string) error {
 	tx := r.db.WithContext(ctx)
 
+	mTags := lodash.Map(tagIDs, func(tagID string, _ int) model.Tag {
+		return model.Tag{
+			ID:   tagID,
+			Name: sql.NullString{String: name, Valid: true},
+		}
+	})
+
 	return tx.Transaction(func(tx *gorm.DB) error {
-		if err := tx.
-			Clauses(clause.OnConflict{
-				// ??
-				DoUpdates: clause.Assignments(map[string]any{"name": gorm.Expr("VALUES(name)")}),
-			}).
-			CreateInBatches(mTags, 100).Error; err != nil {
+		if err := tx.Clauses(clause.OnConflict{
+			DoUpdates: clause.Assignments(map[string]interface{}{"name": name}),
+		}).CreateInBatches(mTags, 100).Error; err != nil {
 			return err
 		}
 
-		tagNames := lodash.Map(mTags, func(tag model.Tag, i int) model.TagName {
-			return model.TagName{
-				Name: tag.Name.String,
-			}
-		})
-
-		return tx.Clauses(clause.OnConflict{
+		// insert tag_name if not exists
+		if err := tx.Clauses(clause.OnConflict{
 			DoNothing: true,
-		}).Save(tagNames).Error
+		}).Create(&model.TagName{Name: name}).Error; err != nil {
+			return err
+		}
+
+		return nil
 	})
 }
 
-func (r *Laundry) ListTags(ctx context.Context, filter qb.Builder) ([]model.Tag, error) {
+func (r *Repository) ListTags(ctx context.Context, filter qb.Builder) ([]model.Tag, error) {
 	var results []model.Tag
 
 	tx := r.db.WithContext(ctx)

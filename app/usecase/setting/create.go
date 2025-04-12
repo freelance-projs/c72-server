@@ -11,10 +11,10 @@ import (
 )
 
 type create struct {
-	repo *repository.Laundry
+	repo *repository.Repository
 }
 
-func Create(repo *repository.Laundry) *create {
+func Create(repo *repository.Repository) *create {
 	return &create{
 		repo: repo,
 	}

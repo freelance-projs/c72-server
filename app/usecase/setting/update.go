@@ -12,10 +12,10 @@ import (
 )
 
 type update struct {
-	repo *repository.Laundry
+	repo *repository.Repository
 }
 
-func Update(repo *repository.Laundry) *update {
+func Update(repo *repository.Repository) *update {
 	return &update{repo: repo}
 }
 

@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func (r *Laundry) CreateDepartment(ctx context.Context, mDepartment *model.Department) error {
+func (r *Repository) CreateDepartment(ctx context.Context, mDepartment *model.Department) error {
 	tx := r.db.WithContext(ctx)
 
 	if err := tx.Create(mDepartment).Error; err != nil {
@@ -18,7 +18,7 @@ func (r *Laundry) CreateDepartment(ctx context.Context, mDepartment *model.Depar
 	return nil
 }
 
-func (r *Laundry) CreateDepartmentInBatches(ctx context.Context, mDepartments []model.Department) error {
+func (r *Repository) CreateDepartmentInBatches(ctx context.Context, mDepartments []model.Department) error {
 	tx := r.db.WithContext(ctx)
 
 	if err := tx.Clauses(clause.OnConflict{
@@ -30,7 +30,7 @@ func (r *Laundry) CreateDepartmentInBatches(ctx context.Context, mDepartments []
 	return nil
 }
 
-func (r *Laundry) DeleteDepartments(ctx context.Context, names []string) error {
+func (r *Repository) DeleteDepartments(ctx context.Context, names []string) error {
 	tx := r.db.WithContext(ctx)
 
 	if err := tx.Where("name IN ?", names).Delete(&model.Department{}).Error; err != nil {
@@ -40,7 +40,7 @@ func (r *Laundry) DeleteDepartments(ctx context.Context, names []string) error {
 	return nil
 }
 
-func (r *Laundry) ListDepartment(ctx context.Context, filter qb.Builder) ([]model.Department, error) {
+func (r *Repository) ListDepartment(ctx context.Context, filter qb.Builder) ([]model.Department, error) {
 	tx := r.db.WithContext(ctx)
 
 	if filter != nil {
@@ -55,7 +55,7 @@ func (r *Laundry) ListDepartment(ctx context.Context, filter qb.Builder) ([]mode
 	return mDepartments, nil
 }
 
-func (r *Laundry) UpdateDepartmentName(ctx context.Context, oldName, newName string) error {
+func (r *Repository) UpdateDepartmentName(ctx context.Context, oldName, newName string) error {
 	tx := r.db.WithContext(ctx)
 
 	if err := tx.Exec("UPDATE department SET name = ? WHERE name = ?",
@@ -65,3 +65,5 @@ func (r *Laundry) UpdateDepartmentName(ctx context.Context, oldName, newName str
 
 	return nil
 }
+
+// 1090025019625-4f1nerenkar5ipn3frd81ennut3pv0l6.apps.googleusercontent.com

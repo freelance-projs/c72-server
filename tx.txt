@@ -1,0 +1,75 @@
+- so luong, ton kho, ai tra
+
+- Khoa x muon (id)
+   - 5 cai y
+   - 10 cai z
+
+   - Khoa y tra (ref id)
+      - 4 cai y
+   - Khoa Z tra 
+      - cai y
+      - 10 cai z
+
+
+{
+   "id": "123456",
+   "name": "Khoa x",
+   "items": [
+      {
+         "id": "y",
+         "quantity": 5
+      },
+      {
+         "id": "z",
+         "quantity": 10
+      }
+   ],
+   "returns": [
+      {
+         "ref_id": "123456",
+         "khoa": "y",
+         "items": [
+         {
+            "id": "y",
+            "quantity": 4
+         }
+         ]
+      },
+      {
+         "ref_id": "123456",
+         "khoa": "z",
+         "items": [
+         {
+            "id": "y",
+            "quantity": 1
+         },
+         {
+            "id": "z",
+            "quantity": 10
+         }
+         ]
+      }
+   ]
+}
+
+Đảm bảo:
+
+1 thẻ Đang cho khoa mượn thì không tạo được giao dịch mượn đồ tiếp
+
+Nếu 1 thẻ (vật phẩm) đang được cho mượn thì không thể tạo giao dịch `Cho Khoa Mượn Đồ`
+
+Để có thể tạo giao dịch `Khoa Trả Đồ` thì bắt buộc phải có giao dịch `Khoa Mượn Đồ` trước đó
+
+Có 4 loại giao dịch: `KKhoa Mượn Đồ`, `Khoa Trả Đồ`, `Công ty Giặt Đồ`, `Công ty Trả Đồ`
+
+1. Điều kiệu để tạo giao dịch `Khoa Mượn Đồ`
+- Thẻ đang free (không có giao dịch liên quan đến khoa mượn đồ, khoa trả đồ, công ty giặt đồ, công ty trả đồ)
+
+2. Điều kiện để tạo giao dịch `Khoa Trả Đồ`
+- Thẻ phải tồn tại trong giao dịch `Khoa Mượn Đồ` (tức là đã được cho mượn thì mới có thể trả)
+
+3. Điều kiện để tạo giao dịch `Công ty Giặt Đồ`
+- Thẻ đang free (không có giao dịch liên quan đến khoa mượn đồ, khoa trả đồ, công ty giặt đồ, công ty trả đồ)
+
+4. Điều kiện để tạo giao dịch `Công ty Trả Đồ`
+- Thẻ phải tồn tại trong giao dịch `Công ty Giặt Đồ` (tức là đã được giặt đồ thì mới có thể trả)

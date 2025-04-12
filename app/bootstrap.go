@@ -25,7 +25,7 @@ func New(ctx context.Context) *app {
 	initLogger()
 
 	dbConn := mustInitDBConn()
-	repo := repository.NewLaundry(dbConn)
+	repo := repository.New(dbConn)
 	// service.InitSystemSetting(repo)
 
 	handler := route.Handler(repo)

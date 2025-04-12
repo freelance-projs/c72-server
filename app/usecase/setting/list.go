@@ -14,10 +14,10 @@ import (
 )
 
 type list struct {
-	repo *repository.Laundry
+	repo *repository.Repository
 }
 
-func List(repo *repository.Laundry) *list {
+func List(repo *repository.Repository) *list {
 	return &list{repo: repo}
 }
 

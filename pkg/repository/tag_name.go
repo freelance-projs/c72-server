@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func (t *Laundry) CreateTagNameInBatches(ctx context.Context, tagNames []model.TagName) error {
+func (t *Repository) CreateTagNameInBatches(ctx context.Context, tagNames []model.TagName) error {
 	tx := t.db.WithContext(ctx)
 
 	if err := tx.Clauses(clause.OnConflict{
@@ -20,7 +20,7 @@ func (t *Laundry) CreateTagNameInBatches(ctx context.Context, tagNames []model.T
 	return nil
 }
 
-func (t *Laundry) DeleteTagNames(ctx context.Context, names []string) error {
+func (t *Repository) DeleteTagNames(ctx context.Context, names []string) error {
 	tx := t.db.WithContext(ctx)
 
 	return tx.Transaction(func(tx *gorm.DB) error {
@@ -35,7 +35,7 @@ func (t *Laundry) DeleteTagNames(ctx context.Context, names []string) error {
 	})
 }
 
-func (t *Laundry) UpdateTagName(ctx context.Context, oldName, newName string) error {
+func (t *Repository) UpdateTagName(ctx context.Context, oldName, newName string) error {
 	tx := t.db.WithContext(ctx)
 
 	return tx.Transaction(func(tx *gorm.DB) error {
@@ -53,7 +53,7 @@ func (t *Laundry) UpdateTagName(ctx context.Context, oldName, newName string) er
 	})
 }
 
-func (t *Laundry) ListTagNames(ctx context.Context) ([]model.TagName, error) {
+func (t *Repository) ListTagNames(ctx context.Context) ([]model.TagName, error) {
 	tx := t.db.WithContext(ctx)
 
 	var tagNames []model.TagName

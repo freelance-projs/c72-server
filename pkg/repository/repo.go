@@ -4,10 +4,10 @@ import (
 	"gorm.io/gorm"
 )
 
-type Laundry struct {
+type Repository struct {
 	db *gorm.DB
 }
 
-func NewLaundry(db *gorm.DB) *Laundry {
-	return &Laundry{db: db}
+func New(db *gorm.DB) *Repository {
+	return &Repository{db: db}
 }

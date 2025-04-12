@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func (r *Laundry) CreateLaundry(ctx context.Context, mLaundry *model.Laundry, tagIDs []string) error {
+func (r *Repository) CreateLaundry(ctx context.Context, mLaundry *model.Laundry, tagIDs []string) error {
 	tx := r.db.WithContext(ctx)
 
 	now := time.Now()
@@ -43,7 +43,7 @@ func (r *Laundry) CreateLaundry(ctx context.Context, mLaundry *model.Laundry, ta
 	return txErr
 }
 
-func (r *Laundry) GetLaundryByID(ctx context.Context, id int) (*model.Laundry, error) {
+func (r *Repository) GetLaundryByID(ctx context.Context, id int) (*model.Laundry, error) {
 	tx := r.db.WithContext(ctx)
 
 	var mLaundry model.Laundry
@@ -54,7 +54,7 @@ func (r *Laundry) GetLaundryByID(ctx context.Context, id int) (*model.Laundry, e
 	return &mLaundry, nil
 }
 
-func (r *Laundry) ReturnClean(ctx context.Context, tagIDs []string) error {
+func (r *Repository) ReturnClean(ctx context.Context, tagIDs []string) error {
 	tx := r.db.WithContext(ctx)
 
 	txErr := tx.Transaction(func(tx *gorm.DB) error {
@@ -97,7 +97,7 @@ func (r *Laundry) ReturnClean(ctx context.Context, tagIDs []string) error {
 	return txErr
 }
 
-func (r *Laundry) ListLaundries(ctx context.Context, filter qb.Builder) ([]model.Laundry, error) {
+func (r *Repository) ListLaundries(ctx context.Context, filter qb.Builder) ([]model.Laundry, error) {
 	tx := r.db.WithContext(ctx)
 
 	if filter != nil {

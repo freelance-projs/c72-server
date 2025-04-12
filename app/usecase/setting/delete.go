@@ -12,10 +12,10 @@ import (
 )
 
 type delete struct {
-	repo *repository.Laundry
+	repo *repository.Repository
 }
 
-func Delete(repo *repository.Laundry) *delete {
+func Delete(repo *repository.Repository) *delete {
 	return &delete{repo: repo}
 }
 

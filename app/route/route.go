@@ -8,9 +8,8 @@ import (
 	"github.com/ngoctd314/c72-api-server/app/usecase"
 	"github.com/ngoctd314/c72-api-server/app/usecase/company"
 	"github.com/ngoctd314/c72-api-server/app/usecase/department"
-	"github.com/ngoctd314/c72-api-server/app/usecase/laundry"
-	"github.com/ngoctd314/c72-api-server/app/usecase/lending"
 	"github.com/ngoctd314/c72-api-server/app/usecase/setting"
+	"github.com/ngoctd314/c72-api-server/app/usecase/stat"
 	"github.com/ngoctd314/c72-api-server/app/usecase/tag"
 	"github.com/ngoctd314/c72-api-server/app/usecase/tagname"
 	"github.com/ngoctd314/c72-api-server/app/usecase/txlog"
@@ -19,7 +18,7 @@ import (
 	"github.com/ngoctd314/common/net/ghttp"
 )
 
-func Handler(repo *repository.Laundry) *gin.Engine {
+func Handler(repo *repository.Repository) *gin.Engine {
 	gin.DisableBindValidation()
 	mux := gin.New()
 
@@ -36,6 +35,11 @@ func Handler(repo *repository.Laundry) *gin.Engine {
 	api.DELETE("/tags/:id", ghttp.GinHandleFunc(tag.DeleteByID(repo)))
 	api.PATCH("/tags/by-name", ghttp.GinHandleFunc(tag.UpdateTagNameByName(repo)))
 
+	api.POST("/tag-names/upload", ghttp.GinHandleFunc(tagname.CreateByUpload(repo)))
+	api.DELETE("/tag-names", ghttp.GinHandleFunc(tagname.DeleteBatch(repo)))
+	api.GET("/tag-names", ghttp.GinHandleFunc(tagname.List(repo)))
+	api.PATCH("/tag-names", ghttp.GinHandleFunc(tagname.Change(repo)))
+
 	api.POST("/departments", ghttp.GinHandleFunc(department.Create(repo)))
 	api.POST("/departments/upload", ghttp.GinHandleFunc(department.CreateByUpload(repo)))
 	api.GET("/departments", ghttp.GinHandleFunc(department.List(repo)))
@@ -46,11 +50,6 @@ func Handler(repo *repository.Laundry) *gin.Engine {
 	api.GET("/companies", ghttp.GinHandleFunc(company.List(repo)))
 	api.DELETE("/companies", ghttp.GinHandleFunc(company.DeleteBatch(repo)))
 	api.PATCH("/companies/by-name", ghttp.GinHandleFunc(company.Change(repo)))
-
-	api.POST("/tag-names/upload", ghttp.GinHandleFunc(tagname.CreateByUpload(repo)))
-	api.DELETE("/tag-names", ghttp.GinHandleFunc(tagname.DeleteBatch(repo)))
-	api.GET("/tag-names", ghttp.GinHandleFunc(tagname.List(repo)))
-	api.PATCH("/tag-names", ghttp.GinHandleFunc(tagname.Change(repo)))
 
 	api.POST("/settings", ghttp.GinHandleFunc(setting.Create(repo)))
 	api.GET("/settings", ghttp.GinHandleFunc(setting.List(repo)))
@@ -63,18 +62,27 @@ func Handler(repo *repository.Laundry) *gin.Engine {
 	api.GET("/tx-log/companies", ghttp.GinHandleFunc(txlog.ListCompany(repo)))
 	api.GET("/tx-log/companies/:id", ghttp.GinHandleFunc(txlog.GetCompany(repo)))
 
+	api.GET("/stats/departments", ghttp.GinHandleFunc(stat.ListDepartment(repo)))
+	api.GET("/stats/departments/:department", ghttp.GinHandleFunc(stat.GetDepartment(repo)))
+
+	api.GET("/stats/tags", ghttp.GinHandleFunc(stat.ListTag(repo)))
+	api.GET("/stats/tags/:tag_name", ghttp.GinHandleFunc(stat.GetTag(repo)))
+
+	api.GET("/stats/companies", ghttp.GinHandleFunc(stat.ListCompany(repo)))
+	api.GET("/stats/companies/:company", ghttp.GinHandleFunc(stat.GetCompany(repo)))
+
 	api.GET("/ping", ghttp.GinHandleFunc(usecase.Ping()))
 
-	api.POST("/lending", ghttp.GinHandleFunc(lending.DoLending(repo)))
-	api.GET("/lending/:id/tags", ghttp.GinHandleFunc(lending.GetTags(repo)))
-	api.GET("/lending", ghttp.GinHandleFunc(lending.List(repo)))
-	api.PATCH("/lending/return-dirty", ghttp.GinHandleFunc(lending.ReturnDirty(repo)))
-
-	api.POST("/laundry", ghttp.GinHandleFunc(laundry.DoLaundry(repo)))
-	api.GET("/laundry/:id", ghttp.GinHandleFunc(laundry.Get(repo)))
-	api.GET("/washing/:id/tags", ghttp.GinHandleFunc(laundry.GetTags(repo)))
-	api.GET("/laundry", ghttp.GinHandleFunc(laundry.List(repo)))
-	api.PATCH("/laundry/return-clean", ghttp.GinHandleFunc(laundry.ReturnClean(repo)))
+	// api.POST("/lending", ghttp.GinHandleFunc(lending.DoLending(repo)))
+	// api.GET("/lending/:id/tags", ghttp.GinHandleFunc(lending.GetTags(repo)))
+	// api.GET("/lending", ghttp.GinHandleFunc(lending.List(repo)))
+	// api.PATCH("/lending/return-dirty", ghttp.GinHandleFunc(lending.ReturnDirty(repo)))
+	//
+	// api.POST("/laundry", ghttp.GinHandleFunc(laundry.DoLaundry(repo)))
+	// api.GET("/laundry/:id", ghttp.GinHandleFunc(laundry.Get(repo)))
+	// api.GET("/washing/:id/tags", ghttp.GinHandleFunc(laundry.GetTags(repo)))
+	// api.GET("/laundry", ghttp.GinHandleFunc(laundry.List(repo)))
+	// api.PATCH("/laundry/return-clean", ghttp.GinHandleFunc(laundry.ReturnClean(repo)))
 
 	return mux
 }

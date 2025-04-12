@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func (r *Laundry) CreateLending(ctx context.Context, mLending *model.Lending, tagIDs []string) error {
+func (r *Repository) CreateLending(ctx context.Context, mLending *model.Lending, tagIDs []string) error {
 	tx := r.db.WithContext(ctx)
 
 	now := time.Now()
@@ -42,7 +42,7 @@ func (r *Laundry) CreateLending(ctx context.Context, mLending *model.Lending, ta
 	return txErr
 }
 
-func (r *Laundry) GetLendingByID(ctx context.Context, id int) (*model.Lending, error) {
+func (r *Repository) GetLendingByID(ctx context.Context, id int) (*model.Lending, error) {
 	tx := r.db.WithContext(ctx)
 
 	var mLending model.Lending
@@ -55,7 +55,7 @@ func (r *Laundry) GetLendingByID(ctx context.Context, id int) (*model.Lending, e
 	return &mLending, nil
 }
 
-func (r *Laundry) ReturnDirty(ctx context.Context, tagIDs []string) error {
+func (r *Repository) ReturnDirty(ctx context.Context, tagIDs []string) error {
 	tx := r.db.WithContext(ctx)
 
 	txErr := tx.Transaction(func(tx *gorm.DB) error {
@@ -93,7 +93,7 @@ func (r *Laundry) ReturnDirty(ctx context.Context, tagIDs []string) error {
 	return txErr
 }
 
-func (r *Laundry) ListLending(ctx context.Context, filter qb.Builder) ([]model.Lending, error) {
+func (r *Repository) ListLending(ctx context.Context, filter qb.Builder) ([]model.Lending, error) {
 	tx := r.db.WithContext(ctx)
 	if filter != nil {
 		tx = filter.Build(tx)

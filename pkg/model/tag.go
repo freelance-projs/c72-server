@@ -5,10 +5,8 @@ import (
 )
 
 type Tag struct {
-	ID          string         `gorm:"column:id;primaryKey"`
-	Name        sql.NullString `gorm:"column:name"`
-	LastUsed    sql.NullTime   `gorm:"column:last_used"`
-	LastWashing sql.NullTime   `gorm:"column:last_washing"`
+	ID   string         `gorm:"column:id;primaryKey"`
+	Name sql.NullString `gorm:"column:name"`
 }
 
 func (Tag) TableName() string {

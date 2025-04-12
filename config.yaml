@@ -5,16 +5,19 @@ gracefulShutdown:
 
 http:
   server:
-    addr: 0.0.0.0:5080
     cfg: readHeaderTimeout=5s&readTimeout=20s&writeTimeout=25s&idleTimeout=20s&maxHeaderBytes=10000
+    addr: "0.0.0.0:5080"
   cors:
     allowOrigins: "*"
 
 mysql:
   laundry:
-    dsn: root:secret@tcp(localhost:3306)/laundry?charset=utf8mb4&loc=Local&parseTime=True&tls=skip-verify
+    dsn: root:secret@tcp(localhost:3306)/laundry?charset=utf8mb4&loc=Local&parseTime=True
     cfg: maxOpenConns=100&maxIdleConns=100&connMaxLifetime=5m&connMaxIdleTime=1m
 
 logger:
   format: text # text, json
   writer: stdout # stdout, file
+
+telegram:
+  botToken: 7632093683:AAEzfAQqI_KT0M1MLYpip4-qWnXNShj6pCw

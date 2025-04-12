@@ -8,12 +8,11 @@ func (Department) TableName() string {
 	return "department"
 }
 
-func (Department) Columns() departmentColumns {
-	return departmentColumns{
-		Name: "name",
-	}
+type DepartmentTag struct {
+	TagID      string `gorm:"column:tag_id;primaryKey"`
+	Department string `gorm:"column:department"`
 }
 
-type departmentColumns struct {
-	Name string
+func (DepartmentTag) TableName() string {
+	return "department_tag"
 }

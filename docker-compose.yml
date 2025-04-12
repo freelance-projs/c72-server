@@ -14,17 +14,5 @@ services:
     depends_on:
       - api-server
 
-  mysql:
-    image: mysql:8.0
-    container_name: mysql
-    ports:
-      - "3306:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: secret
-      MYSQL_DATABASE: laundry
-    volumes:
-      - tag:/var/lib/mysql
-      # - C:\docker-volumes\mysql:/var/lib/mysql
-
 volumes:
   tag:

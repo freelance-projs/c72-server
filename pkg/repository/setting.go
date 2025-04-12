@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func (r *Laundry) CreateSetting(ctx context.Context, mSetting *model.Setting) error {
+func (r *Repository) CreateSetting(ctx context.Context, mSetting *model.Setting) error {
 	tx := r.db.WithContext(ctx)
 
 	if err := tx.Clauses(clause.OnConflict{
@@ -20,7 +20,7 @@ func (r *Laundry) CreateSetting(ctx context.Context, mSetting *model.Setting) er
 	return nil
 }
 
-func (r *Laundry) UpdateSettingByKey(ctx context.Context, key string, mSetting *model.Setting) error {
+func (r *Repository) UpdateSettingByKey(ctx context.Context, key string, mSetting *model.Setting) error {
 	tx := r.db.WithContext(ctx)
 
 	if err := tx.Where(model.Setting{Key: key}).Updates(mSetting).Error; err != nil {
@@ -30,7 +30,7 @@ func (r *Laundry) UpdateSettingByKey(ctx context.Context, key string, mSetting *
 	return nil
 }
 
-func (r *Laundry) ListSetting(ctx context.Context) ([]model.Setting, error) {
+func (r *Repository) ListSetting(ctx context.Context) ([]model.Setting, error) {
 	tx := r.db.WithContext(ctx)
 
 	var mSettings []model.Setting
@@ -41,7 +41,7 @@ func (r *Laundry) ListSetting(ctx context.Context) ([]model.Setting, error) {
 	return mSettings, nil
 }
 
-func (r *Laundry) DeleteSettingByKey(ctx context.Context, key string) error {
+func (r *Repository) DeleteSettingByKey(ctx context.Context, key string) error {
 	tx := r.db.WithContext(ctx)
 
 	if err := tx.Where("`key` = ?", key).Delete(&model.Setting{}).Error; err != nil {

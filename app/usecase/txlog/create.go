@@ -15,11 +15,11 @@ import (
 )
 
 type create struct {
-	repo    *repository.Laundry
+	repo    *repository.Repository
 	teleBot *telebot.Bot
 }
 
-func Create(repo *repository.Laundry) *create {
+func Create(repo *repository.Repository) *create {
 	pref := telebot.Settings{
 		Token: env.GetString("telegram.botToken"),
 	}
@@ -75,12 +75,11 @@ func (uc *create) Usecase(ctx context.Context, req *dto.CreateTxLogRequest) (*gh
 }
 
 func (uc *create) createLendingTx(ctx context.Context, department string, tagIDs []string) error {
-	mTxLog, err := uc.repo.CreateLendingTx(ctx, department, tagIDs)
+	txID, err := uc.repo.CreateLendingTx(ctx, department, tagIDs)
 	if err != nil {
 		return err
 	}
 
-	txID := mTxLog.ID
 	go func() {
 		if _, err := uc.teleBot.Send(&telebot.Chat{
 			ID: -1002500429787,
@@ -138,12 +137,11 @@ Xem chi tiết tại:
 }
 
 func (uc *create) createWashingTx(ctx context.Context, department string, tagIDs []string) error {
-	mTxLog, err := uc.repo.CreateWashingTx(ctx, department, tagIDs)
+	txID, err := uc.repo.CreateWashingTx(ctx, department, tagIDs)
 	if err != nil {
 		return err
 	}
 
-	txID := mTxLog.ID
 	go func() {
 		if _, err := uc.teleBot.Send(&telebot.Chat{
 			ID: -1002500429787,

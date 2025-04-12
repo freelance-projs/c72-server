@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func (r *Laundry) CreateCompany(ctx context.Context, mCompany *model.Company) error {
+func (r *Repository) CreateCompany(ctx context.Context, mCompany *model.Company) error {
 	tx := r.db.WithContext(ctx)
 
 	if err := tx.Create(mCompany).Error; err != nil {
@@ -18,7 +18,7 @@ func (r *Laundry) CreateCompany(ctx context.Context, mCompany *model.Company) er
 	return nil
 }
 
-func (r *Laundry) CreateCompanyInBatches(ctx context.Context, mCompanys []model.Company) error {
+func (r *Repository) CreateCompanyInBatches(ctx context.Context, mCompanys []model.Company) error {
 	tx := r.db.WithContext(ctx)
 
 	if err := tx.Clauses(clause.OnConflict{
@@ -30,7 +30,7 @@ func (r *Laundry) CreateCompanyInBatches(ctx context.Context, mCompanys []model.
 	return nil
 }
 
-func (r *Laundry) DeleteCompanies(ctx context.Context, names []string) error {
+func (r *Repository) DeleteCompanies(ctx context.Context, names []string) error {
 	tx := r.db.WithContext(ctx)
 
 	if err := tx.Where("name IN ?", names).Delete(&model.Company{}).Error; err != nil {
@@ -40,7 +40,7 @@ func (r *Laundry) DeleteCompanies(ctx context.Context, names []string) error {
 	return nil
 }
 
-func (r *Laundry) ListCompanies(ctx context.Context, filter qb.Builder) ([]model.Company, error) {
+func (r *Repository) ListCompanies(ctx context.Context, filter qb.Builder) ([]model.Company, error) {
 	tx := r.db.WithContext(ctx)
 
 	if filter != nil {
@@ -55,7 +55,7 @@ func (r *Laundry) ListCompanies(ctx context.Context, filter qb.Builder) ([]model
 	return mCompanys, nil
 }
 
-func (r *Laundry) UpdateCompanyName(ctx context.Context, oldName, newName string) error {
+func (r *Repository) UpdateCompanyName(ctx context.Context, oldName, newName string) error {
 	tx := r.db.WithContext(ctx)
 
 	if err := tx.Exec("UPDATE company SET name = ? WHERE name = ?",

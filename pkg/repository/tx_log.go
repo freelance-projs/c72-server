@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func (r *Laundry) GetActiveTags(ctx context.Context, action string, tagIDs []string) ([]model.Tag, error) {
+func (r *Repository) GetActiveTags(ctx context.Context, action string, tagIDs []string) ([]model.Tag, error) {
 	tx := r.db.WithContext(ctx)
 
 	switch action {
@@ -106,13 +106,15 @@ func (r *Laundry) GetActiveTags(ctx context.Context, action string, tagIDs []str
 	}
 }
 
-func (r *Laundry) CreateLendingTx(ctx context.Context, department string, tagIDs []string) (*model.TxLogDepartment, error) {
+func (r *Repository) CreateLendingTx(ctx context.Context, department string, tagIDs []string) (int, error) {
 	tx := r.db.WithContext(ctx)
 
-	var mTxLog *model.TxLogDepartment
+	txID := int(time.Now().Unix())
+
 	txErr := tx.Transaction(func(tx *gorm.DB) error {
 		// check tag is free
 		var countTxTag int64
+		// TODO: check lock
 		if err := tx.Raw("select count(*) from tx_tag where tag_id IN ? for update", tagIDs).
 			Count(&countTxTag).Error; err != nil {
 			return err
@@ -130,6 +132,9 @@ func (r *Laundry) CreateLendingTx(ctx context.Context, department string, tagIDs
 		if len(tags) == 0 {
 			return fmt.Errorf("%w (tag)", apperror.DataNotFound)
 		}
+		// if len(tags) != len(tagIDs) {
+		// 	return errors.New("vui lòng gán tên cho tất cả các tag")
+		// }
 
 		// count tag_name
 		mapTagName := make(map[string]int)
@@ -138,40 +143,37 @@ func (r *Laundry) CreateLendingTx(ctx context.Context, department string, tagIDs
 		}
 
 		// create tx_log
-		txLogTracking := make([]model.TxLogTracking, 0, len(mapTagName))
+		departmentStats := make([]model.TxLogDepartment, 0, len(mapTagName))
+		lendingStats := make([]model.LendingStat, 0, len(mapTagName))
 		for tagName, count := range mapTagName {
-			txLogTracking = append(txLogTracking, model.TxLogTracking{
-				Name:  tagName,
-				Count: count,
+			departmentStats = append(departmentStats, model.TxLogDepartment{
+				ID:         txID,
+				Department: department,
+				Action:     model.EDepartmentActionLending,
+				TagName:    tagName,
+				Lending:    count,
+			})
+			lendingStats = append(lendingStats, model.LendingStat{
+				ID:         txID,
+				TagName:    tagName,
+				Lending:    count,
+				Department: department,
 			})
 		}
 
-		txLog := model.TxLogDepartment{
-			Overview: model.TxLogOverview{
-				Actor:     department,
-				TotalTags: uint(len(tagIDs)),
-				Returned:  0,
-			},
-			Details: []model.TxLogDetail{
-				{
-					Action:    fmt.Sprintf("%s mượn đồ", department),
-					Tracking:  txLogTracking,
-					CreatedAt: time.Now(),
-				},
-			},
-		}
-
-		if err := tx.Omit("updated_at").Create(&txLog).Error; err != nil {
+		if err := createTxLogDepartments(tx, departmentStats); err != nil {
 			return err
 		}
-		mTxLog = &txLog
+		if err := createLendingStats(tx, lendingStats); err != nil {
+			return err
+		}
 
 		// create tx_tag to tracking updated tag
 		txTags := make([]model.TxTag, 0, len(tagIDs))
 		for _, tagID := range tagIDs {
 			txTags = append(txTags, model.TxTag{
 				TagID:  tagID,
-				TxID:   txLog.ID,
+				TxID:   txID,
 				Status: model.TxTagStatusLending,
 			})
 		}
@@ -182,10 +184,10 @@ func (r *Laundry) CreateLendingTx(ctx context.Context, department string, tagIDs
 		return nil
 	})
 
-	return mTxLog, txErr
+	return txID, txErr
 }
 
-func (r *Laundry) ReturnLendingTx(ctx context.Context, department string, tagIDs []string) ([]int, error) {
+func (r *Repository) ReturnLendingTx(ctx context.Context, department string, tagIDs []string) ([]int, error) {
 	tx := r.db.WithContext(ctx)
 
 	var txIDs []int
@@ -207,7 +209,7 @@ func (r *Laundry) ReturnLendingTx(ctx context.Context, department string, tagIDs
 			mapTxIDToTagIDs[txTag.TxID] = append(mapTxIDToTagIDs[txTag.TxID], txTag.TagID)
 		}
 
-		now := time.Now()
+		// now := time.Now()
 		for txID, tagIDs := range mapTxIDToTagIDs {
 			// get tag name by id
 			tags, err := getTagByIDs(tx, tagIDs)
@@ -224,36 +226,31 @@ func (r *Laundry) ReturnLendingTx(ctx context.Context, department string, tagIDs
 			}
 
 			// add tx_log
-			txLogTrackings := make([]model.TxLogTracking, 0, len(mapTagName))
+			departmentStats := make([]model.TxLogDepartment, 0, len(mapTagName))
+			lendingStats := make([]model.LendingStat, 0, len(mapTagName))
 			for tagName, count := range mapTagName {
-				txLogTrackings = append(txLogTrackings, model.TxLogTracking{
-					Name:  tagName,
-					Count: count,
+				departmentStats = append(departmentStats, model.TxLogDepartment{
+					ID:         txID,
+					Department: department,
+					Action:     model.EDepartmentActionReturned,
+					TagName:    tagName,
+					Returned:   count,
+				})
+				lendingStats = append(lendingStats, model.LendingStat{
+					ID:       txID,
+					TagName:  tagName,
+					Returned: count,
 				})
 			}
 
-			detail := model.TxLogDetail{
-				Action:    fmt.Sprintf("%s trả đồ", department),
-				Tracking:  txLogTrackings,
-				CreatedAt: now,
+			if err := createTxLogDepartments(tx, departmentStats); err != nil {
+				return err
+			}
+			if err := updateLendingStats(tx, lendingStats); err != nil {
+				return err
 			}
 
 			txIDs = append(txIDs, txID)
-			// get tx_log
-			txLog := model.TxLogDepartment{
-				ID: txID,
-			}
-			if err := tx.Where(&txLog).Take(&txLog).Error; err != nil {
-				return fmt.Errorf("failed to get tx_log: %w", err)
-			}
-			// append detail to tx_log
-			txLog.Details = append(txLog.Details, detail)
-			txLog.Overview.Returned += uint(len(tagIDs))
-
-			// update tx_log
-			if err := tx.Updates(&txLog).Error; err != nil {
-				return fmt.Errorf("failed to update tx_log: %w", err)
-			}
 
 			// clear tx_tag
 			if err := tx.Delete(model.TxTag{}, "tag_id IN ?", tagIDs).Error; err != nil {
@@ -267,10 +264,11 @@ func (r *Laundry) ReturnLendingTx(ctx context.Context, department string, tagIDs
 	return txIDs, txErr
 }
 
-func (r *Laundry) CreateWashingTx(ctx context.Context, company string, tagIDs []string) (*model.TxLogCompany, error) {
+func (r *Repository) CreateWashingTx(ctx context.Context, company string, tagIDs []string) (int, error) {
 	tx := r.db.WithContext(ctx)
 
-	var mTxLog *model.TxLogCompany
+	txID := int(time.Now().Unix())
+
 	txErr := tx.Transaction(func(tx *gorm.DB) error {
 		// check tag is free
 		var countTxTag int64
@@ -299,40 +297,37 @@ func (r *Laundry) CreateWashingTx(ctx context.Context, company string, tagIDs []
 		}
 
 		// create tx_log
-		txLogTracking := make([]model.TxLogTracking, 0, len(mapTagName))
+		companyStat := make([]model.TxLogCompany, 0, len(mapTagName))
+		washingStats := make([]model.WashingStat, 0, len(mapTagName))
 		for tagName, count := range mapTagName {
-			txLogTracking = append(txLogTracking, model.TxLogTracking{
-				Name:  tagName,
-				Count: count,
+			companyStat = append(companyStat, model.TxLogCompany{
+				ID:      txID,
+				Company: company,
+				Action:  model.ECompanyActionWashing,
+				TagName: tagName,
+				Washing: count,
+			})
+			washingStats = append(washingStats, model.WashingStat{
+				ID:      txID,
+				TagName: tagName,
+				Washing: count,
+				Company: company,
 			})
 		}
 
-		txLog := model.TxLogCompany{
-			Overview: model.TxLogOverview{
-				Actor:     company,
-				TotalTags: uint(len(tagIDs)),
-				Returned:  0,
-			},
-			Details: []model.TxLogDetail{
-				{
-					Action:    fmt.Sprintf("%s giặt đồ", company),
-					Tracking:  txLogTracking,
-					CreatedAt: time.Now(),
-				},
-			},
-		}
-
-		if err := tx.Omit("updated_at").Create(&txLog).Error; err != nil {
+		if err := createCompanyStatDetail(tx, companyStat); err != nil {
 			return err
 		}
-		mTxLog = &txLog
+		if err := createWashingStats(tx, washingStats); err != nil {
+			return err
+		}
 
 		// create tx_tag to tracking updated tag
 		txTags := make([]model.TxTag, 0, len(tagIDs))
 		for _, tagID := range tagIDs {
 			txTags = append(txTags, model.TxTag{
 				TagID:  tagID,
-				TxID:   txLog.ID,
+				TxID:   txID,
 				Status: model.TxTagStatusWashing,
 			})
 		}
@@ -343,10 +338,10 @@ func (r *Laundry) CreateWashingTx(ctx context.Context, company string, tagIDs []
 		return nil
 	})
 
-	return mTxLog, txErr
+	return txID, txErr
 }
 
-func (r *Laundry) ReturnWashingTx(ctx context.Context, company string, tagIDs []string) ([]int, error) {
+func (r *Repository) ReturnWashingTx(ctx context.Context, company string, tagIDs []string) ([]int, error) {
 	tx := r.db.WithContext(ctx)
 
 	var txIDs []int
@@ -368,7 +363,6 @@ func (r *Laundry) ReturnWashingTx(ctx context.Context, company string, tagIDs []
 			mapTxIDToTagIDs[txTag.TxID] = append(mapTxIDToTagIDs[txTag.TxID], txTag.TagID)
 		}
 
-		now := time.Now()
 		for txID, tagIDs := range mapTxIDToTagIDs {
 			// get tag name by id
 			tags, err := getTagByIDs(tx, tagIDs)
@@ -385,18 +379,27 @@ func (r *Laundry) ReturnWashingTx(ctx context.Context, company string, tagIDs []
 			}
 
 			// add tx_log
-			txLogTrackings := make([]model.TxLogTracking, 0, len(mapTagName))
+			companyStat := make([]model.TxLogCompany, 0, len(mapTagName))
+			washingStats := make([]model.WashingStat, 0, len(mapTagName))
 			for tagName, count := range mapTagName {
-				txLogTrackings = append(txLogTrackings, model.TxLogTracking{
-					Name:  tagName,
-					Count: count,
+				companyStat = append(companyStat, model.TxLogCompany{
+					ID:       txID,
+					Company:  company,
+					Action:   model.ECompanyActionReturned,
+					TagName:  tagName,
+					Returned: count,
+				})
+				washingStats = append(washingStats, model.WashingStat{
+					ID:       txID,
+					TagName:  tagName,
+					Returned: count,
 				})
 			}
-
-			detail := model.TxLogDetail{
-				Action:    fmt.Sprintf("%s trả đồ sạch", company),
-				Tracking:  txLogTrackings,
-				CreatedAt: now,
+			if err := createCompanyStatDetail(tx, companyStat); err != nil {
+				return err
+			}
+			if err := updateWashingStats(tx, washingStats); err != nil {
+				return err
 			}
 
 			txIDs = append(txIDs, txID)
@@ -407,15 +410,6 @@ func (r *Laundry) ReturnWashingTx(ctx context.Context, company string, tagIDs []
 			if err := tx.Where(&txLog).Take(&txLog).Error; err != nil {
 				return fmt.Errorf("failed to get tx_log: %w", err)
 			}
-			// append detail to tx_log
-			txLog.Details = append(txLog.Details, detail)
-			txLog.Overview.Returned += uint(len(tagIDs))
-
-			// update tx_log
-			if err := tx.Updates(&txLog).Error; err != nil {
-				return fmt.Errorf("failed to update tx_log: %w", err)
-			}
-
 			// clear tx_tag
 			if err := tx.Delete(model.TxTag{}, "tag_id IN ?", tagIDs).Error; err != nil {
 				return fmt.Errorf("failed to delete tx_tag: %w", err)

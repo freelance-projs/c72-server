@@ -1,0 +1,60 @@
+CREATE TABLE IF NOT EXISTS tag (
+  id VARCHAR(128) PRIMARY KEY,
+  name VARCHAR(255) null,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_name (name),
+  KEY idx_created_at (created_at)
+);
+
+CREATE TABLE IF NOT EXISTS department (name VARCHAR(255) PRIMARY KEY);
+
+CREATE TABLE IF NOT EXISTS lending (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  department VARCHAR(128) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS lending_tag (
+  lending_id INT NOT NULL,
+  tag_id VARCHAR(128) NOT NULL,
+  status ENUM('lending', 'returned') NOT NULL DEFAULT 'lending',
+  PRIMARY KEY (lending_id, tag_id)
+);
+
+CREATE TABLE IF NOT EXISTS laundry (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(128) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS laundry_tag (
+  laundry_id INT NOT NULL,
+  tag_id VARCHAR(128) NOT NULL,
+  status ENUM('washing', 'returned') NOT NULL DEFAULT 'washing',
+  PRIMARY KEY (laundry_id, tag_id)
+);
+
+ALTER TABLE lending
+ADD COLUMN num_lending INT UNSIGNED NOT NULL DEFAULT 0 AFTER `department`;
+
+ALTER TABLE laundry
+ADD COLUMN num_washing INT UNSIGNED NOT NULL DEFAULT 0 AFTER `name`;
+
+CREATE TABLE IF NOT EXISTS `tag_name` (`name` VARCHAR(255) NOT NULL PRIMARY KEY);
+
+CREATE TABLE IF NOT EXISTS setting (
+  `key` VARCHAR(25) NOT NULL PRIMARY KEY,
+  `value` TEXT NOT NULL
+);
+
+ALTER TABLE lending_tag
+ADD COLUMN created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+ALTER TABLE tag
+ADD COLUMN `last_used` DATETIME after `name`,
+ADD COLUMN `last_washing` DATETIME after `last_used`;
+
+ALTER TABLE tag
+DROP COLUMN `created_at`,
+DROP COLUMN `updated_at`;

@@ -17,10 +17,10 @@ type tagRepoListByID interface {
 }
 
 type listTagByID struct {
-	repo *repository.Laundry
+	repo *repository.Repository
 }
 
-func GetActiveTagsByIDs(repo *repository.Laundry) *listTagByID {
+func GetActiveTagsByIDs(repo *repository.Repository) *listTagByID {
 	return &listTagByID{
 		repo: repo,
 	}
