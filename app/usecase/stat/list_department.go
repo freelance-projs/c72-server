@@ -65,19 +65,26 @@ func (uc *listDepartment) Usecase(ctx context.Context, req *dto.ListDepartmentSt
 		dtoStats[m[stat.Department]].Returned += stat.Returned
 	}
 
-	go func() {
-		sheetCols := make([]any, 0, len(dtoStats))
-		for _, stat := range dtoStats {
-			sheetCols = append(sheetCols, stat)
-		}
+	if len(dtoStats) > 0 {
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					slog.Error("error inserting data to sheet", "err", r)
+				}
+			}()
+			sheetCols := make([]any, 0, len(dtoStats))
+			for _, stat := range dtoStats {
+				sheetCols = append(sheetCols, stat)
+			}
 
-		now := time.Now()
-		sheetName := "Nội bộ " + time.Now().Format("2006-01-02")
-		if err := uc.sheetSvc.insert(uc.sheetID, sheetName, sheetCols); err != nil {
-			slog.Error("error inserting data to sheet", "err", err)
-		}
-		slog.Info("insert data to sheet successfully", "sheetID", uc.sheetID, "since", time.Since(now).Seconds())
-	}()
+			now := time.Now()
+			sheetName := "Nội bộ " + time.Now().Format("2006-01-02")
+			if err := uc.sheetSvc.insert(uc.sheetID, sheetName, sheetCols); err != nil {
+				slog.Error("error inserting data to sheet", "err", err)
+			}
+			slog.Info("insert data to sheet successfully", "sheetID", uc.sheetID, "since", time.Since(now).Seconds())
+		}()
+	}
 
 	return ghttp.ResponseBodyOK(dtoStats), nil
 }

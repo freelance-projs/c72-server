@@ -129,15 +129,22 @@ func (uc *create) createLendingTx(ctx context.Context, department string, tagIDs
 		})
 	}
 
-	go func() {
-		now := time.Now()
-		sheetName := "Nội bộ " + time.Now().Format("2006-01-02")
-		if err := uc.sheetSvc.insert(uc.sheetID, sheetName, sheetCols); err != nil {
-			slog.Error("error inserting data to sheet", "err", err)
-			return
-		}
-		slog.Info("insert data to sheet successfully", "sheetID", uc.sheetID, "since", time.Since(now).Seconds())
-	}()
+	if len(sheetCols) > 0 {
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					slog.Error("error inserting data to sheet", "err", r)
+				}
+			}()
+			now := time.Now()
+			sheetName := "Nội bộ " + time.Now().Format("2006-01-02")
+			if err := uc.sheetSvc.insert(uc.sheetID, sheetName, sheetCols); err != nil {
+				slog.Error("error inserting data to sheet", "err", err)
+				return
+			}
+			slog.Info("insert data to sheet successfully", "sheetID", uc.sheetID, "since", time.Since(now).Seconds())
+		}()
+	}
 
 	go func() {
 		if _, err := uc.teleBot.Send(&telebot.Chat{
@@ -182,15 +189,17 @@ func (uc *create) createLendingReturnTx(ctx context.Context, department string, 
 		})
 	}
 
-	go func() {
-		now := time.Now()
-		sheetName := "Nội bộ " + time.Now().Format("2006-01-02")
-		if err := uc.sheetSvc.insert(uc.sheetID, sheetName, sheetCols); err != nil {
-			slog.Error("error inserting data to sheet", "err", err)
-			return
-		}
-		slog.Info("insert data to sheet successfully", "sheetID", uc.sheetID, "since", time.Since(now).Seconds())
-	}()
+	if len(sheetCols) > 0 {
+		go func() {
+			now := time.Now()
+			sheetName := "Nội bộ " + time.Now().Format("2006-01-02")
+			if err := uc.sheetSvc.insert(uc.sheetID, sheetName, sheetCols); err != nil {
+				slog.Error("error inserting data to sheet", "err", err)
+				return
+			}
+			slog.Info("insert data to sheet successfully", "sheetID", uc.sheetID, "since", time.Since(now).Seconds())
+		}()
+	}
 
 	var links []string
 	for _, txID := range txIDs {
@@ -249,15 +258,22 @@ func (uc *create) createWashingTx(ctx context.Context, department string, tagIDs
 		})
 	}
 
-	go func() {
-		now := time.Now()
-		sheetName := "Công ty " + time.Now().Format("2006-01-02")
-		if err := uc.sheetSvc.insert(uc.sheetID, sheetName, sheetCols); err != nil {
-			slog.Error("error inserting data to sheet", "err", err)
-			return
-		}
-		slog.Info("công ty giặt đồ thành công", "sheetID", uc.sheetID, "since", time.Since(now).Seconds())
-	}()
+	if len(sheetCols) > 0 {
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					slog.Error("error inserting data to sheet", "err", r)
+				}
+			}()
+			now := time.Now()
+			sheetName := "Công ty " + time.Now().Format("2006-01-02")
+			if err := uc.sheetSvc.insert(uc.sheetID, sheetName, sheetCols); err != nil {
+				slog.Error("error inserting data to sheet", "err", err)
+				return
+			}
+			slog.Info("công ty giặt đồ thành công", "sheetID", uc.sheetID, "since", time.Since(now).Seconds())
+		}()
+	}
 
 	go func() {
 		if _, err := uc.teleBot.Send(&telebot.Chat{
@@ -302,15 +318,22 @@ func (uc *create) createWashingReturnTx(ctx context.Context, department string, 
 		})
 	}
 
-	go func() {
-		now := time.Now()
-		sheetName := "Công ty " + time.Now().Format("2006-01-02")
-		if err := uc.sheetSvc.insert(uc.sheetID, sheetName, sheetCols); err != nil {
-			slog.Error("error inserting data to sheet", "err", err)
-			return
-		}
-		slog.Info("công ty trả đồ thành công", "sheetID", uc.sheetID, "since", time.Since(now).Seconds())
-	}()
+	if len(sheetCols) > 0 {
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					slog.Error("error inserting data to sheet", "err", r)
+				}
+			}()
+			now := time.Now()
+			sheetName := "Công ty " + time.Now().Format("2006-01-02")
+			if err := uc.sheetSvc.insert(uc.sheetID, sheetName, sheetCols); err != nil {
+				slog.Error("error inserting data to sheet", "err", err)
+				return
+			}
+			slog.Info("công ty trả đồ thành công", "sheetID", uc.sheetID, "since", time.Since(now).Seconds())
+		}()
+	}
 
 	var links []string
 	for _, txID := range txIDs {
