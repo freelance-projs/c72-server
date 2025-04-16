@@ -10,17 +10,38 @@ import (
 	"github.com/ngoctd314/common/net/ghttp"
 )
 
-// 1xgd39AuKdQKnyOJO63W7Y3KueUVyoBdsYskhRMpOKW4
 type listCompany struct {
 	repo     *repository.Repository
 	sheetSvc *sheetService
+	sheetID  string
 }
 
 func ListCompany(repo *repository.Repository) *listCompany {
-	return &listCompany{
+	uc := &listCompany{
 		repo:     repo,
 		sheetSvc: newSheetService(),
 	}
+
+	setting, err := repo.GetSetting(context.Background())
+	if err == nil {
+		uc.sheetID = setting.TxLogSheetID
+	} else {
+		uc.sheetID = "1xgd39AuKdQKnyOJO63W7Y3KueUVyoBdsYskhRMpOKW4"
+	}
+
+	go func() {
+		ticker := time.NewTicker(time.Minute)
+		for range ticker.C {
+			setting, err := repo.GetSetting(context.Background())
+			slog.Info("updating stat sheet id")
+			if err == nil {
+				uc.sheetID = setting.TxLogSheetID
+			}
+			ticker.Reset(time.Minute)
+		}
+	}()
+
+	return uc
 }
 
 func (uc *listCompany) Usecase(ctx context.Context, req *dto.ListCompanyStatRequest) (*ghttp.ResponseBody, error) {
@@ -50,14 +71,12 @@ func (uc *listCompany) Usecase(ctx context.Context, req *dto.ListCompanyStatRequ
 			sheetCols = append(sheetCols, stat)
 		}
 
-		spreadsheetID := "1xgd39AuKdQKnyOJO63W7Y3KueUVyoBdsYskhRMpOKW4"
-
 		now := time.Now()
 		sheetName := "Công ty " + time.Now().Format("2006-01-02")
-		if err := uc.sheetSvc.insert(spreadsheetID, sheetName, sheetCols); err != nil {
+		if err := uc.sheetSvc.insert(uc.sheetID, sheetName, sheetCols); err != nil {
 			slog.Error("error inserting data to sheet", "err", err)
 		}
-		slog.Info("insert data to sheet successfully", "sheetID", spreadsheetID, "since", time.Since(now).Seconds())
+		slog.Info("insert data to sheet successfully", "sheetID", uc.sheetID, "since", time.Since(now).Seconds())
 	}()
 
 	return ghttp.ResponseBodyOK(dtoStats), nil

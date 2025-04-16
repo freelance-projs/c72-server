@@ -19,6 +19,7 @@ type create struct {
 	sheetSvc *sheetService
 	repo     *repository.Repository
 	teleBot  *telebot.Bot
+	sheetID  string
 }
 
 func Create(repo *repository.Repository) *create {
@@ -31,11 +32,32 @@ func Create(repo *repository.Repository) *create {
 	}
 	sheetSvc := newSheetService()
 
-	return &create{
+	uc := &create{
 		repo:     repo,
 		teleBot:  teleBot,
 		sheetSvc: sheetSvc,
 	}
+	setting, err := repo.GetSetting(context.Background())
+	if err == nil {
+		uc.sheetID = setting.TxLogSheetID
+	} else {
+		uc.sheetID = "1XIMAojHp1g-SMt8aOY-IGaPB0hT-KnW1HsBWB4VcV64"
+	}
+
+	go func() {
+		ticker := time.NewTicker(time.Minute)
+		for range ticker.C {
+			setting, err := repo.GetSetting(context.Background())
+			slog.Info("updating tx log sheet id")
+			if err == nil {
+				uc.sheetID = setting.TxLogSheetID
+			}
+			ticker.Reset(time.Minute)
+		}
+	}()
+
+	return uc
+
 }
 
 func (uc *create) Usecase(ctx context.Context, req *dto.CreateTxLogRequest) (*ghttp.ResponseBody, error) {
@@ -108,14 +130,13 @@ func (uc *create) createLendingTx(ctx context.Context, department string, tagIDs
 	}
 
 	go func() {
-		spreadsheetID := "1XIMAojHp1g-SMt8aOY-IGaPB0hT-KnW1HsBWB4VcV64"
 		now := time.Now()
 		sheetName := "Nội bộ " + time.Now().Format("2006-01-02")
-		if err := uc.sheetSvc.insert(spreadsheetID, sheetName, sheetCols); err != nil {
+		if err := uc.sheetSvc.insert(uc.sheetID, sheetName, sheetCols); err != nil {
 			slog.Error("error inserting data to sheet", "err", err)
 			return
 		}
-		slog.Info("insert data to sheet successfully", "sheetID", spreadsheetID, "since", time.Since(now).Seconds())
+		slog.Info("insert data to sheet successfully", "sheetID", uc.sheetID, "since", time.Since(now).Seconds())
 	}()
 
 	go func() {
@@ -162,14 +183,13 @@ func (uc *create) createLendingReturnTx(ctx context.Context, department string, 
 	}
 
 	go func() {
-		spreadsheetID := "1XIMAojHp1g-SMt8aOY-IGaPB0hT-KnW1HsBWB4VcV64"
 		now := time.Now()
 		sheetName := "Nội bộ " + time.Now().Format("2006-01-02")
-		if err := uc.sheetSvc.insert(spreadsheetID, sheetName, sheetCols); err != nil {
+		if err := uc.sheetSvc.insert(uc.sheetID, sheetName, sheetCols); err != nil {
 			slog.Error("error inserting data to sheet", "err", err)
 			return
 		}
-		slog.Info("insert data to sheet successfully", "sheetID", spreadsheetID, "since", time.Since(now).Seconds())
+		slog.Info("insert data to sheet successfully", "sheetID", uc.sheetID, "since", time.Since(now).Seconds())
 	}()
 
 	var links []string
@@ -230,14 +250,13 @@ func (uc *create) createWashingTx(ctx context.Context, department string, tagIDs
 	}
 
 	go func() {
-		spreadsheetID := "1XIMAojHp1g-SMt8aOY-IGaPB0hT-KnW1HsBWB4VcV64"
 		now := time.Now()
 		sheetName := "Công ty " + time.Now().Format("2006-01-02")
-		if err := uc.sheetSvc.insert(spreadsheetID, sheetName, sheetCols); err != nil {
+		if err := uc.sheetSvc.insert(uc.sheetID, sheetName, sheetCols); err != nil {
 			slog.Error("error inserting data to sheet", "err", err)
 			return
 		}
-		slog.Info("công ty giặt đồ thành công", "sheetID", spreadsheetID, "since", time.Since(now).Seconds())
+		slog.Info("công ty giặt đồ thành công", "sheetID", uc.sheetID, "since", time.Since(now).Seconds())
 	}()
 
 	go func() {
@@ -284,14 +303,13 @@ func (uc *create) createWashingReturnTx(ctx context.Context, department string, 
 	}
 
 	go func() {
-		spreadsheetID := "1XIMAojHp1g-SMt8aOY-IGaPB0hT-KnW1HsBWB4VcV64"
 		now := time.Now()
 		sheetName := "Công ty " + time.Now().Format("2006-01-02")
-		if err := uc.sheetSvc.insert(spreadsheetID, sheetName, sheetCols); err != nil {
+		if err := uc.sheetSvc.insert(uc.sheetID, sheetName, sheetCols); err != nil {
 			slog.Error("error inserting data to sheet", "err", err)
 			return
 		}
-		slog.Info("công ty trả đồ thành công", "sheetID", spreadsheetID, "since", time.Since(now).Seconds())
+		slog.Info("công ty trả đồ thành công", "sheetID", uc.sheetID, "since", time.Since(now).Seconds())
 	}()
 
 	var links []string
