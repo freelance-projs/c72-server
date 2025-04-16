@@ -19,7 +19,7 @@ func ToTxLogDepartmentDto(m *model.LendingStat) dto.TxLogDepartment {
 	}
 }
 
-func ToLogCompanyDto(m *model.TxLogCompany) dto.TxLogCompany {
+func ToLogCompanyDto(m *model.WashingStat) dto.TxLogCompany {
 	if m == nil {
 		return dto.TxLogCompany{}
 	}

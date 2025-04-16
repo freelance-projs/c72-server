@@ -2,6 +2,8 @@ package stat
 
 import (
 	"context"
+	"log/slog"
+	"time"
 
 	"github.com/ngoctd314/c72-api-server/pkg/dto"
 	"github.com/ngoctd314/c72-api-server/pkg/repository"
@@ -9,19 +11,26 @@ import (
 )
 
 type listTag struct {
-	repo *repository.Repository
+	repo     *repository.Repository
+	sheetSvc *sheetService
 }
 
 func ListTag(repo *repository.Repository) *listTag {
-	return &listTag{repo: repo}
+	return &listTag{
+		repo:     repo,
+		sheetSvc: newSheetService(),
+	}
 }
 
 func (uc *listTag) Usecase(ctx context.Context, req *dto.ListTagStatRequest) (*ghttp.ResponseBody, error) {
-	lendingStats, err := uc.repo.ListLendingTagStats(ctx)
+	from := time.Unix(*req.From, 0)
+	to := time.Unix(*req.To, 0)
+
+	lendingStats, err := uc.repo.ListLendingTagStats(ctx, from, to)
 	if err != nil {
 		return nil, err
 	}
-	washingStats, err := uc.repo.ListWashingTagStats(ctx)
+	washingStats, err := uc.repo.ListWashingTagStats(ctx, from, to)
 	if err != nil {
 		return nil, err
 	}
@@ -60,5 +69,44 @@ func (uc *listTag) Usecase(ctx context.Context, req *dto.ListTagStatRequest) (*g
 		}
 	}
 
+	go func() {
+		sheetCols := make([]any, 0, len(dtoStats))
+		for _, stat := range dtoStats {
+			sheetCols = append(sheetCols, stat)
+		}
+
+		spreadsheetID := "1xgd39AuKdQKnyOJO63W7Y3KueUVyoBdsYskhRMpOKW4"
+
+		now := time.Now()
+		sheetName := "Thẻ " + time.Now().Format("2006-01-02")
+		if err := uc.sheetSvc.insert(spreadsheetID, sheetName, sheetCols); err != nil {
+			slog.Error("error inserting data to sheet", "err", err)
+		}
+		slog.Info("insert data to sheet successfully", "sheetID", spreadsheetID, "since", time.Since(now).Seconds())
+	}()
+
 	return ghttp.ResponseBodyOK(dtoStats), nil
+}
+
+func (uc *listTag) Validate(ctx context.Context, req *dto.ListTagStatRequest) error {
+	now := time.Now()
+
+	if req.From == nil && req.To == nil {
+		to := now.Unix()
+		req.To = &to
+		from := now.Add(-weakDuration).Unix()
+		req.From = &from
+	}
+
+	if req.To == nil {
+		to := now.Unix()
+		req.To = &to
+	}
+
+	if req.From == nil {
+		from := time.Unix(*req.To, 0).Add(-weakDuration).Unix()
+		req.From = &from
+	}
+
+	return nil
 }

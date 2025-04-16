@@ -20,9 +20,9 @@ func Update(repo *repository.Repository) *update {
 }
 
 func (uc *update) Usecase(ctx context.Context, req *dto.UpdateSettingRequest) (*ghttp.ResponseBody, error) {
-	err := uc.repo.UpdateSettingByKey(ctx, req.Key, &model.Setting{
-		Key:   req.Key,
-		Value: req.Value,
+	err := uc.repo.UpdateSetting(ctx, &model.Setting{
+		TxLogSheetID:  req.TxLogSheetID,
+		ReportSheetID: req.ReportSheetID,
 	})
 
 	if err != nil {

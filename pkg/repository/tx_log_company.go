@@ -19,19 +19,19 @@ func (r *Repository) GetTxLogCompanyByID(ctx context.Context, id int) ([]model.T
 	return txLog, nil
 }
 
-func (r *Repository) ListTxLogCompany(ctx context.Context, from, to time.Time) ([]model.TxLogCompany, error) {
+func (r *Repository) ListWashingStat(ctx context.Context, from, to time.Time) ([]model.WashingStat, error) {
 	tx := r.db.WithContext(ctx)
 
-	q := `select id, company, sum(washing) as washing, sum(returned) as returned, created_at from tx_log_company group by id, company, created_at;`
+	q := `select id, company, sum(washing) as washing, sum(returned) as returned, created_at from washing_stat where created_at >= ? and created_at <= ? group by id, company, created_at;`
 
-	var txLogs []model.TxLogCompany
-	if err := tx.Raw(q).Scan(&txLogs).Error; err != nil {
+	var txLogs []model.WashingStat
+	if err := tx.Raw(q, from, to).Scan(&txLogs).Error; err != nil {
 		return nil, err
 	}
 
 	return txLogs, nil
 }
 
-func createCompanyStatDetail(tx *gorm.DB, companyStat []model.TxLogCompany) error {
-	return tx.Omit("created_at").CreateInBatches(companyStat, 20).Error
+func createTxLogCompany(tx *gorm.DB, companyStat []model.TxLogCompany) error {
+	return tx.CreateInBatches(companyStat, 20).Error
 }

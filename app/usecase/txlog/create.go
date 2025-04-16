@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ngoctd314/c72-api-server/pkg/dto"
+	"github.com/ngoctd314/c72-api-server/pkg/model"
 	"github.com/ngoctd314/c72-api-server/pkg/repository"
 	"github.com/ngoctd314/common/env"
 	"github.com/ngoctd314/common/net/ghttp"
@@ -15,8 +16,9 @@ import (
 )
 
 type create struct {
-	repo    *repository.Repository
-	teleBot *telebot.Bot
+	sheetSvc *sheetService
+	repo     *repository.Repository
+	teleBot  *telebot.Bot
 }
 
 func Create(repo *repository.Repository) *create {
@@ -27,10 +29,12 @@ func Create(repo *repository.Repository) *create {
 	if err != nil {
 		panic(err)
 	}
+	sheetSvc := newSheetService()
 
 	return &create{
-		repo:    repo,
-		teleBot: teleBot,
+		repo:     repo,
+		teleBot:  teleBot,
+		sheetSvc: sheetSvc,
 	}
 }
 
@@ -74,25 +78,59 @@ func (uc *create) Usecase(ctx context.Context, req *dto.CreateTxLogRequest) (*gh
 	return nil, nil
 }
 
+type lendingTxSheet struct {
+	Department string `header:"Phòng ban"`
+	Action     string `header:"Hàng động"`
+	TagName    string `header:"Tên vật phẩm"`
+	Count      int    `header:"Số lượng"`
+	CreateAt   string `header:"Vào lúc"`
+}
+
 func (uc *create) createLendingTx(ctx context.Context, department string, tagIDs []string) error {
-	txID, err := uc.repo.CreateLendingTx(ctx, department, tagIDs)
+	txID, txLogDepartment, err := uc.repo.CreateLendingTx(ctx, department, tagIDs)
 	if err != nil {
 		return err
 	}
+
+	sheetCols := make([]any, 0, len(txLogDepartment))
+	for _, v := range txLogDepartment {
+		action := "Mượn"
+		if v.Action == model.EDepartmentActionReturned {
+			action = "Trả"
+		}
+		sheetCols = append(sheetCols, lendingTxSheet{
+			Department: v.Department,
+			Action:     action,
+			TagName:    v.TagName,
+			Count:      int(v.Lending),
+			CreateAt:   v.CreatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+
+	go func() {
+		spreadsheetID := "1XIMAojHp1g-SMt8aOY-IGaPB0hT-KnW1HsBWB4VcV64"
+		now := time.Now()
+		sheetName := "Nội bộ " + time.Now().Format("2006-01-02")
+		if err := uc.sheetSvc.insert(spreadsheetID, sheetName, sheetCols); err != nil {
+			slog.Error("error inserting data to sheet", "err", err)
+			return
+		}
+		slog.Info("insert data to sheet successfully", "sheetID", spreadsheetID, "since", time.Since(now).Seconds())
+	}()
 
 	go func() {
 		if _, err := uc.teleBot.Send(&telebot.Chat{
 			ID: -1002500429787,
 		}, fmt.Sprintf(`Ghi nhận giao dịch Khoa Mượn Đồ
-	- Thực hiện lúc %s
-	- %s mượn %d vật phẩm
+		- Thực hiện lúc %s
+		- %s mượn %d vật phẩm
 
-Xem chi tiết tại:
-	- %s`,
+	Xem chi tiết tại:
+		- %s`,
 			time.Now().Format("15:04:05"),
 			department,
 			len(tagIDs),
-			fmt.Sprintf("http://154.26.134.232:5081/lending/%d", txID)),
+			fmt.Sprintf("http://154.26.134.232:5081/tx-log/department/%d", txID)),
 			&telebot.SendOptions{},
 		); err != nil {
 			slog.Error("error sending message", "err", err)
@@ -103,14 +141,40 @@ Xem chi tiết tại:
 }
 
 func (uc *create) createLendingReturnTx(ctx context.Context, department string, tagIDs []string) error {
-	txIDs, err := uc.repo.ReturnLendingTx(ctx, department, tagIDs)
+	txIDs, txLogDepartment, err := uc.repo.ReturnLendingTx(ctx, department, tagIDs)
 	if err != nil {
 		return err
 	}
 
+	sheetCols := make([]any, 0, len(txLogDepartment))
+	for _, v := range txLogDepartment {
+		action := "Mượn"
+		if v.Action == model.EDepartmentActionReturned {
+			action = "Trả"
+		}
+		sheetCols = append(sheetCols, lendingTxSheet{
+			Department: v.Department,
+			Action:     action,
+			TagName:    v.TagName,
+			Count:      int(v.Returned),
+			CreateAt:   v.CreatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+
+	go func() {
+		spreadsheetID := "1XIMAojHp1g-SMt8aOY-IGaPB0hT-KnW1HsBWB4VcV64"
+		now := time.Now()
+		sheetName := "Nội bộ " + time.Now().Format("2006-01-02")
+		if err := uc.sheetSvc.insert(spreadsheetID, sheetName, sheetCols); err != nil {
+			slog.Error("error inserting data to sheet", "err", err)
+			return
+		}
+		slog.Info("insert data to sheet successfully", "sheetID", spreadsheetID, "since", time.Since(now).Seconds())
+	}()
+
 	var links []string
 	for _, txID := range txIDs {
-		link := fmt.Sprintf("http://154.26.134.232:5081/lending/%d", txID)
+		link := fmt.Sprintf("http://154.26.134.232:5081/tx-log/department/%d", txID)
 		links = append(links, link)
 	}
 	go func() {
@@ -136,11 +200,45 @@ Xem chi tiết tại:
 	return nil
 }
 
+type washingTxSheet struct {
+	Company  string `header:"Công ty"`
+	Action   string `header:"Hàng động"`
+	TagName  string `header:"Tên vật phẩm"`
+	Count    int    `header:"Số lượng"`
+	CreateAt string `header:"Vào lúc"`
+}
+
 func (uc *create) createWashingTx(ctx context.Context, department string, tagIDs []string) error {
-	txID, err := uc.repo.CreateWashingTx(ctx, department, tagIDs)
+	txID, txLogCompany, err := uc.repo.CreateWashingTx(ctx, department, tagIDs)
 	if err != nil {
 		return err
 	}
+
+	sheetCols := make([]any, 0, len(txLogCompany))
+	for _, v := range txLogCompany {
+		action := "Giặt"
+		if v.Action == model.ECompanyActionReturned {
+			action = "Trả"
+		}
+		sheetCols = append(sheetCols, washingTxSheet{
+			Company:  v.Company,
+			Action:   action,
+			TagName:  v.TagName,
+			Count:    int(v.Washing),
+			CreateAt: v.CreatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+
+	go func() {
+		spreadsheetID := "1XIMAojHp1g-SMt8aOY-IGaPB0hT-KnW1HsBWB4VcV64"
+		now := time.Now()
+		sheetName := "Công ty " + time.Now().Format("2006-01-02")
+		if err := uc.sheetSvc.insert(spreadsheetID, sheetName, sheetCols); err != nil {
+			slog.Error("error inserting data to sheet", "err", err)
+			return
+		}
+		slog.Info("công ty giặt đồ thành công", "sheetID", spreadsheetID, "since", time.Since(now).Seconds())
+	}()
 
 	go func() {
 		if _, err := uc.teleBot.Send(&telebot.Chat{
@@ -154,7 +252,7 @@ Xem chi tiết tại:
 			time.Now().Format("15:04:05"),
 			department,
 			len(tagIDs),
-			fmt.Sprintf("http://154.26.134.232:5081/washing/%d", txID)),
+			fmt.Sprintf("http://154.26.134.232:5081/tx-log/company/%d", txID)),
 			&telebot.SendOptions{},
 		); err != nil {
 			slog.Error("error sending message", "err", err)
@@ -165,14 +263,40 @@ Xem chi tiết tại:
 }
 
 func (uc *create) createWashingReturnTx(ctx context.Context, department string, tagIDs []string) error {
-	txIDs, err := uc.repo.ReturnWashingTx(ctx, department, tagIDs)
+	txIDs, txLogCompany, err := uc.repo.ReturnWashingTx(ctx, department, tagIDs)
 	if err != nil {
 		return err
 	}
 
+	sheetCols := make([]any, 0, len(txLogCompany))
+	for _, v := range txLogCompany {
+		action := "Giặt"
+		if v.Action == model.ECompanyActionReturned {
+			action = "Trả"
+		}
+		sheetCols = append(sheetCols, washingTxSheet{
+			Company:  v.Company,
+			Action:   action,
+			TagName:  v.TagName,
+			Count:    int(v.Returned),
+			CreateAt: v.CreatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+
+	go func() {
+		spreadsheetID := "1XIMAojHp1g-SMt8aOY-IGaPB0hT-KnW1HsBWB4VcV64"
+		now := time.Now()
+		sheetName := "Công ty " + time.Now().Format("2006-01-02")
+		if err := uc.sheetSvc.insert(spreadsheetID, sheetName, sheetCols); err != nil {
+			slog.Error("error inserting data to sheet", "err", err)
+			return
+		}
+		slog.Info("công ty trả đồ thành công", "sheetID", spreadsheetID, "since", time.Since(now).Seconds())
+	}()
+
 	var links []string
 	for _, txID := range txIDs {
-		link := fmt.Sprintf("http://154.26.134.232:5081/washing/%d", txID)
+		link := fmt.Sprintf("http://154.26.134.232:5081/tx-log/company/%d", txID)
 		links = append(links, link)
 	}
 	go func() {

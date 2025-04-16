@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/ngoctd314/c72-api-server/pkg/model"
 	"gorm.io/gorm"
@@ -36,13 +37,13 @@ func updateWashingStats(tx *gorm.DB, tagStats []model.WashingStat) error {
 	return nil
 }
 
-func (r *Repository) ListDepartmentStats(ctx context.Context) ([]model.LendingStat, error) {
+func (r *Repository) ListDepartmentStats(ctx context.Context, from, to time.Time) ([]model.LendingStat, error) {
 	tx := r.db.WithContext(ctx)
 
-	q := `select department, sum(lending) as lending, sum(returned) as returned from lending_stat group by department`
+	q := `select department, sum(lending) as lending, sum(returned) as returned from lending_stat where created_at >= ? and created_at <= ? group by department`
 
 	var deptStat []model.LendingStat
-	if err := tx.Raw(q).Scan(&deptStat).Error; err != nil {
+	if err := tx.Raw(q, from, to).Scan(&deptStat).Error; err != nil {
 		return nil, err
 	}
 
@@ -75,39 +76,39 @@ func (r *Repository) GetCompanyStat(ctx context.Context, company string) ([]mode
 	return companyStat, nil
 }
 
-func (r *Repository) ListCompanyStats(ctx context.Context) ([]model.WashingStat, error) {
+func (r *Repository) ListCompanyStats(ctx context.Context, from, to time.Time) ([]model.WashingStat, error) {
 	tx := r.db.WithContext(ctx)
 
-	q := `select company, sum(washing) as washing, sum(returned) as returned from washing_stat group by company`
+	q := `select company, sum(washing) as washing, sum(returned) as returned from washing_stat where created_at >= ? and created_at <= ? group by company`
 
 	var companyStat []model.WashingStat
-	if err := tx.Raw(q).Scan(&companyStat).Error; err != nil {
+	if err := tx.Raw(q, from, to).Scan(&companyStat).Error; err != nil {
 		return nil, err
 	}
 
 	return companyStat, nil
 }
 
-func (r *Repository) ListLendingTagStats(ctx context.Context) ([]model.LendingStat, error) {
+func (r *Repository) ListLendingTagStats(ctx context.Context, from, to time.Time) ([]model.LendingStat, error) {
 	tx := r.db.WithContext(ctx)
 
-	q := `select tag_name, sum(lending) as lending, sum(returned) as returned from lending_stat group by tag_name`
+	q := `select tag_name, sum(lending) as lending, sum(returned) as returned from lending_stat where created_at >= ? and created_at <= ? group by tag_name`
 
 	var deptStat []model.LendingStat
-	if err := tx.Raw(q).Scan(&deptStat).Error; err != nil {
+	if err := tx.Raw(q, from, to).Scan(&deptStat).Error; err != nil {
 		return nil, err
 	}
 
 	return deptStat, nil
 }
 
-func (r *Repository) ListWashingTagStats(ctx context.Context) ([]model.WashingStat, error) {
+func (r *Repository) ListWashingTagStats(ctx context.Context, from, to time.Time) ([]model.WashingStat, error) {
 	tx := r.db.WithContext(ctx)
 
-	q := `select tag_name, sum(washing) as washing, sum(returned) as returned from washing_stat group by tag_name`
+	q := `select tag_name, sum(washing) as washing, sum(returned) as returned from washing_stat where created_at >= ? and created_at <= ? group by tag_name`
 
 	var companyStat []model.WashingStat
-	if err := tx.Raw(q).Scan(&companyStat).Error; err != nil {
+	if err := tx.Raw(q, from, to).Scan(&companyStat).Error; err != nil {
 		return nil, err
 	}
 

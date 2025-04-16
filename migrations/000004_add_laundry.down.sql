@@ -1,3 +1,0 @@
-DROP TABLE IF EXISTS laundry;
-
-DROP TABLE IF EXISTS laundry_tag;

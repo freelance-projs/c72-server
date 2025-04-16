@@ -11,7 +11,8 @@ func ToTagDto(m *model.Tag) dto.Tag {
 	}
 
 	return dto.Tag{
-		ID:   m.ID,
-		Name: m.Name.String,
+		ID:        m.ID,
+		Name:      m.Name.String,
+		CreatedAt: m.CreatedAt,
 	}
 }

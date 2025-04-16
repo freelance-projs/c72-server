@@ -1,3 +1,0 @@
-DROP TABLE IF EXISTS lending;
-
-DROP TABLE IF EXISTS lending_tag;

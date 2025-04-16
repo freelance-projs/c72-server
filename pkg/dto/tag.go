@@ -6,8 +6,9 @@ import (
 )
 
 type Tag struct {
-	ID   string `json:"id"`
-	Name string `json:"name,omitempty"`
+	ID        string    `json:"id"`
+	Name      string    `json:"name,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type AssignTagRequest struct {
@@ -49,11 +50,6 @@ type ListTagsRequest struct {
 	To   *time.Time `form:"to" validate:"omitnil,required"`
 }
 
-type TagScanHistoryRequest struct {
-	From *time.Time `form:"from" validate:"omitnil,required"`
-	To   *time.Time `form:"to" validate:"omitnil,required"`
-}
-
 type ScanHistoryUnit struct {
 	TagName   string    `json:"tag_name"`
 	Count     int       `json:"count"`
@@ -80,4 +76,24 @@ type DeleteTagByNameRequest struct {
 
 type TagMappingUploadRequest struct {
 	Reader io.ReadCloser
+}
+
+type CreateTagCompanyRequest struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type CreateTagDepartmentRequest struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type TagCompany struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type TagDepartment struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }

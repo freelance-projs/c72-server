@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log/slog"
 
 	"github.com/ngoctd314/c72-api-server/pkg/model"
 	"github.com/ngoctd314/common/apperror"
@@ -99,6 +100,7 @@ func (t *Repository) DeleteTagByID(ctx context.Context, id string) error {
 func (r *Repository) CreateTagInBatches(ctx context.Context, tagIDs []string, name string) error {
 	tx := r.db.WithContext(ctx)
 
+	slog.Info("assign tag", "len", len(tagIDs), "name", name)
 	mTags := lodash.Map(tagIDs, func(tagID string, _ int) model.Tag {
 		return model.Tag{
 			ID:   tagID,
@@ -131,6 +133,56 @@ func (r *Repository) ListTags(ctx context.Context, filter qb.Builder) ([]model.T
 	if filter != nil {
 		tx = filter.Build(tx)
 	}
+	if err := tx.Find(&results).Error; err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
+func (r *Repository) CreateTagCompany(ctx context.Context, m *model.TagCompany) error {
+	tx := r.db.WithContext(ctx)
+
+	if err := tx.Clauses(
+		clause.OnConflict{
+			DoUpdates: clause.Assignments(map[string]interface{}{"name": m.Name}),
+		},
+	).Create(&m).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *Repository) CreateTagDepartment(ctx context.Context, m *model.TagDepartment) error {
+	tx := r.db.WithContext(ctx)
+
+	if err := tx.Clauses(
+		clause.OnConflict{
+			DoUpdates: clause.Assignments(map[string]interface{}{"name": m.Name}),
+		},
+	).Create(&m).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *Repository) ListTagCompanies(ctx context.Context) ([]model.TagCompany, error) {
+	var results []model.TagCompany
+
+	tx := r.db.WithContext(ctx)
+	if err := tx.Find(&results).Error; err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
+func (r *Repository) ListTagDepartments(ctx context.Context) ([]model.TagDepartment, error) {
+	var results []model.TagDepartment
+
+	tx := r.db.WithContext(ctx)
 	if err := tx.Find(&results).Error; err != nil {
 		return nil, err
 	}

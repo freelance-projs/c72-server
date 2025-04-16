@@ -23,7 +23,7 @@ func ListDept(repo *repository.Repository) *listDept {
 func (uc *listDept) Usecase(ctx context.Context, req *dto.ListTxLogRequest) (*ghttp.ResponseBody, error) {
 	from := time.Unix(*req.From, 0)
 	to := time.Unix(*req.To, 0)
-	mLendingStats, err := uc.repo.ListTxLogDepartments(ctx, from, to)
+	mLendingStats, err := uc.repo.ListLendStat(ctx, from, to)
 	if err != nil {
 		return nil, err
 	}

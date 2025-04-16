@@ -13,8 +13,8 @@ type CreateBatchTagNameRequest struct {
 type ListTagNameRequest struct{}
 
 type UpdateSettingRequest struct {
-	Key   string `json:"key" validate:"required"`
-	Value string `json:"value" validate:"required"`
+	TxLogSheetID  string `json:"tx_log_sheet_id" validate:"omitempty,min=1"`
+	ReportSheetID string `json:"report_sheet_id" validate:"omitempty,min=1"`
 }
 
 type DeleteTagNameRequest struct {

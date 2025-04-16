@@ -23,16 +23,16 @@ func ListCompany(repo *repository.Repository) *listCompany {
 func (uc *listCompany) Usecase(ctx context.Context, req *dto.ListTxLogDeptRequest) (*ghttp.ResponseBody, error) {
 	from := time.Unix(*req.From, 0)
 	to := time.Unix(*req.To, 0)
-	mTxLogs, err := uc.repo.ListTxLogCompany(ctx, from, to)
+	washingStat, err := uc.repo.ListWashingStat(ctx, from, to)
 	if err != nil {
 		return nil, err
 	}
 
-	dtoLendingStats := lodash.Map(mTxLogs, func(stat model.TxLogCompany, _ int) dto.TxLogCompany {
+	washingStats := lodash.Map(washingStat, func(stat model.WashingStat, _ int) dto.TxLogCompany {
 		return mapper.ToLogCompanyDto(&stat)
 	})
 
-	return ghttp.ResponseBodyOK(dtoLendingStats), nil
+	return ghttp.ResponseBodyOK(washingStats), nil
 }
 
 func (uc *listCompany) Validate(ctx context.Context, req *dto.ListTxLogDeptRequest) error {

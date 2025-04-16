@@ -1,15 +1,6 @@
 package dto
 
 type Setting struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
-}
-
-type CreateSettingRequest struct {
-	Key   string `json:"key" validate:"required"`
-	Value string `json:"value" validate:"required"`
-}
-
-type DeleteSettingRequest struct {
-	Key string `json:"key" validate:"required"`
+	TxLogSheetID  string `json:"tx_log_sheet_id"`
+	ReportSheetID string `json:"report_sheet_id"`
 }

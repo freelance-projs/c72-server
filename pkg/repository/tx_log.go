@@ -32,15 +32,19 @@ func (r *Repository) GetActiveTags(ctx context.Context, action string, tagIDs []
 			mapTxTagIDs[txTagID] = struct{}{}
 		}
 
-		tagIDs = lodash.Filter(tagIDs, func(tagID string, _ int) bool {
+		activeTagIDs := lodash.Filter(tagIDs, func(tagID string, _ int) bool {
 			_, exist := mapTxTagIDs[tagID]
 			return !exist
 		})
 
 		var mTags []model.Tag
-		if err := tx.Where("id IN ?", tagIDs).Find(&mTags).Error; err != nil {
+		if err := tx.Where("id IN ?", activeTagIDs).Find(&mTags).Error; err != nil {
 			return nil, err
 		}
+		if len(mTags) != len(activeTagIDs) {
+			return nil, apperror.New("Vui lòng gán tên cho tất cả các tag trước khi thực hiện giao dịch")
+		}
+
 		return mTags, nil
 
 	// tag_ids must be exist in tx_tag with status = lending
@@ -74,15 +78,20 @@ func (r *Repository) GetActiveTags(ctx context.Context, action string, tagIDs []
 			mapTxTagIDs[txTagID] = struct{}{}
 		}
 
-		tagIDs = lodash.Filter(tagIDs, func(tagID string, _ int) bool {
+		activeTagIDs := lodash.Filter(tagIDs, func(tagID string, _ int) bool {
 			_, exist := mapTxTagIDs[tagID]
 			return !exist
 		})
 
 		var mTags []model.Tag
-		if err := tx.Where("id IN ?", tagIDs).Find(&mTags).Error; err != nil {
+		if err := tx.Where("id IN ?", activeTagIDs).Find(&mTags).Error; err != nil {
 			return nil, err
 		}
+
+		if len(mTags) != len(activeTagIDs) {
+			return nil, apperror.New("Vui lòng gán tên cho tất cả các tag trước khi thực hiện giao dịch")
+		}
+
 		return mTags, nil
 
 	// tag_ids must be exist in tx_tag with status = washing
@@ -106,15 +115,15 @@ func (r *Repository) GetActiveTags(ctx context.Context, action string, tagIDs []
 	}
 }
 
-func (r *Repository) CreateLendingTx(ctx context.Context, department string, tagIDs []string) (int, error) {
+func (r *Repository) CreateLendingTx(ctx context.Context, department string, tagIDs []string) (int, []model.TxLogDepartment, error) {
 	tx := r.db.WithContext(ctx)
 
 	txID := int(time.Now().Unix())
+	var txLogDepartment []model.TxLogDepartment
 
 	txErr := tx.Transaction(func(tx *gorm.DB) error {
 		// check tag is free
 		var countTxTag int64
-		// TODO: check lock
 		if err := tx.Raw("select count(*) from tx_tag where tag_id IN ? for update", tagIDs).
 			Count(&countTxTag).Error; err != nil {
 			return err
@@ -129,12 +138,9 @@ func (r *Repository) CreateLendingTx(ctx context.Context, department string, tag
 		if err != nil {
 			return err
 		}
-		if len(tags) == 0 {
-			return fmt.Errorf("%w (tag)", apperror.DataNotFound)
+		if len(tags) != len(tagIDs) {
+			return apperror.New("Vui lòng gán tên cho tất cả các tag trước khi thực hiện giao dịch")
 		}
-		// if len(tags) != len(tagIDs) {
-		// 	return errors.New("vui lòng gán tên cho tất cả các tag")
-		// }
 
 		// count tag_name
 		mapTagName := make(map[string]int)
@@ -181,14 +187,18 @@ func (r *Repository) CreateLendingTx(ctx context.Context, department string, tag
 			return err
 		}
 
+		txLogDepartment = departmentStats
+
 		return nil
 	})
 
-	return txID, txErr
+	return txID, txLogDepartment, txErr
 }
 
-func (r *Repository) ReturnLendingTx(ctx context.Context, department string, tagIDs []string) ([]int, error) {
+func (r *Repository) ReturnLendingTx(ctx context.Context, department string, tagIDs []string) ([]int, []model.TxLogDepartment, error) {
 	tx := r.db.WithContext(ctx)
+
+	var txLogDepartments []model.TxLogDepartment
 
 	var txIDs []int
 	txErr := tx.Transaction(func(tx *gorm.DB) error {
@@ -256,17 +266,20 @@ func (r *Repository) ReturnLendingTx(ctx context.Context, department string, tag
 			if err := tx.Delete(model.TxTag{}, "tag_id IN ?", tagIDs).Error; err != nil {
 				return fmt.Errorf("failed to delete tx_tag: %w", err)
 			}
+
+			txLogDepartments = append(txLogDepartments, departmentStats...)
 		}
 
 		return nil
 	})
 
-	return txIDs, txErr
+	return txIDs, txLogDepartments, txErr
 }
 
-func (r *Repository) CreateWashingTx(ctx context.Context, company string, tagIDs []string) (int, error) {
+func (r *Repository) CreateWashingTx(ctx context.Context, company string, tagIDs []string) (int, []model.TxLogCompany, error) {
 	tx := r.db.WithContext(ctx)
 
+	var txLogCompany []model.TxLogCompany
 	txID := int(time.Now().Unix())
 
 	txErr := tx.Transaction(func(tx *gorm.DB) error {
@@ -315,7 +328,7 @@ func (r *Repository) CreateWashingTx(ctx context.Context, company string, tagIDs
 			})
 		}
 
-		if err := createCompanyStatDetail(tx, companyStat); err != nil {
+		if err := createTxLogCompany(tx, companyStat); err != nil {
 			return err
 		}
 		if err := createWashingStats(tx, washingStats); err != nil {
@@ -335,14 +348,18 @@ func (r *Repository) CreateWashingTx(ctx context.Context, company string, tagIDs
 			return err
 		}
 
+		txLogCompany = companyStat
+
 		return nil
 	})
 
-	return txID, txErr
+	return txID, txLogCompany, txErr
 }
 
-func (r *Repository) ReturnWashingTx(ctx context.Context, company string, tagIDs []string) ([]int, error) {
+func (r *Repository) ReturnWashingTx(ctx context.Context, company string, tagIDs []string) ([]int, []model.TxLogCompany, error) {
 	tx := r.db.WithContext(ctx)
+
+	var txLogCompany []model.TxLogCompany
 
 	var txIDs []int
 	txErr := tx.Transaction(func(tx *gorm.DB) error {
@@ -395,7 +412,7 @@ func (r *Repository) ReturnWashingTx(ctx context.Context, company string, tagIDs
 					Returned: count,
 				})
 			}
-			if err := createCompanyStatDetail(tx, companyStat); err != nil {
+			if err := createTxLogCompany(tx, companyStat); err != nil {
 				return err
 			}
 			if err := updateWashingStats(tx, washingStats); err != nil {
@@ -414,12 +431,14 @@ func (r *Repository) ReturnWashingTx(ctx context.Context, company string, tagIDs
 			if err := tx.Delete(model.TxTag{}, "tag_id IN ?", tagIDs).Error; err != nil {
 				return fmt.Errorf("failed to delete tx_tag: %w", err)
 			}
+
+			txLogCompany = append(txLogCompany, companyStat...)
 		}
 
 		return nil
 	})
 
-	return txIDs, txErr
+	return txIDs, txLogCompany, txErr
 }
 
 func getTagByIDs(tx *gorm.DB, tagIDs []string) ([]model.Tag, error) {

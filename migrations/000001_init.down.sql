@@ -1,1 +1,19 @@
 DROP TABLE IF EXISTS tag;
+
+DROP TABLE IF EXISTS department;
+
+DROP TABLE IF EXISTS tag_name;
+
+DROP TABLE IF EXISTS setting;
+
+DROP TABLE IF EXISTS company;
+
+DROP TABLE IF EXISTS tx_log_department;
+
+DROP TABLE IF EXISTS tx_log_company;
+
+DROP TABLE IF EXISTS tx_tag;
+
+DROP TABLE IF EXISTS lending_stat;
+
+DROP TABLE IF EXISTS wash_stat;

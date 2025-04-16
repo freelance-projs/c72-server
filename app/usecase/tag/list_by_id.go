@@ -32,24 +32,6 @@ func (uc *listTagByID) Usecase(ctx context.Context, req *dto.GetActiveTagsReques
 		return nil, err
 	}
 
-	// now := time.Now()
-	// mTags = lodash.Filter(mTags, func(m model.Tag, _ int) bool {
-	// 	switch req.Type {
-	// 	case "last_used":
-	// 		if !m.LastUsed.Valid {
-	// 			return true
-	// 		}
-	// 		return m.LastUsed.Time.Add(service.SystemSetting.GetTxLockTime()).Before(now)
-	// 	case "last_washing":
-	// 		if !m.LastWashing.Valid {
-	// 			return true
-	// 		}
-	// 		return m.LastWashing.Time.Add(service.SystemSetting.GetTxLockTime()).Before(now)
-	// 	default:
-	// 		return true
-	// 	}
-	// })
-
 	tagDtos := lodash.Map(mTags, func(mTag model.Tag, _ int) dto.Tag {
 		return mapper.ToTagDto(&mTag)
 	})
