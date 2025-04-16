@@ -24,7 +24,7 @@ func ListTag(repo *repository.Repository) *listTag {
 
 	setting, err := repo.GetSetting(context.Background())
 	if err == nil {
-		uc.sheetID = setting.TxLogSheetID
+		uc.sheetID = setting.ReportSheetID
 	} else {
 		uc.sheetID = "1xgd39AuKdQKnyOJO63W7Y3KueUVyoBdsYskhRMpOKW4"
 	}
@@ -35,7 +35,7 @@ func ListTag(repo *repository.Repository) *listTag {
 			setting, err := repo.GetSetting(context.Background())
 			slog.Info("updating stat sheet id")
 			if err == nil {
-				uc.sheetID = setting.TxLogSheetID
+				uc.sheetID = setting.ReportSheetID
 			}
 			ticker.Reset(time.Minute)
 		}

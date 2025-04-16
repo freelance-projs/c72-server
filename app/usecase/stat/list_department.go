@@ -35,7 +35,7 @@ func ListDepartment(repo *repository.Repository) *listDepartment {
 			setting, err := repo.GetSetting(context.Background())
 			slog.Info("updating stat sheet id")
 			if err == nil {
-				uc.sheetID = setting.TxLogSheetID
+				uc.sheetID = setting.ReportSheetID
 			}
 			ticker.Reset(time.Minute)
 		}
