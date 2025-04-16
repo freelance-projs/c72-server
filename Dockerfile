@@ -9,6 +9,11 @@ RUN go mod download
 RUN CGO_ENABLED=0 go build -o main ./cmd/api
 
 FROM alpine
+# Install tzdata to configure the time zone
+RUN apk add --no-cache tzdata
+# Set the time zone to Ho Chi Minh (Viet Nam)
+RUN ln -fs /usr/share/zoneinfo/Asia/Ho_Chi_Minh /etc/localtime \
+    && echo "Asia/Ho_Chi_Minh" > /etc/timezone
 
 WORKDIR /
 
