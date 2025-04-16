@@ -15,6 +15,7 @@ WORKDIR /
 COPY --from=builder /app/main .
 COPY --from=builder /app/config.yaml .
 COPY --from=builder /app/migrations ./migrations
+COPY --from=builder /app/account_credentials.json .
 
 EXPOSE 8080
 
