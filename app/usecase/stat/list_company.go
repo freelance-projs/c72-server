@@ -24,7 +24,7 @@ func ListCompany(repo *repository.Repository) *listCompany {
 
 	setting, err := repo.GetSetting(context.Background())
 	if err == nil {
-		uc.sheetID = setting.TxLogSheetID
+		uc.sheetID = setting.ReportSheetID
 	} else {
 		uc.sheetID = "1xgd39AuKdQKnyOJO63W7Y3KueUVyoBdsYskhRMpOKW4"
 	}
